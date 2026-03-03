@@ -1,5 +1,6 @@
 ﻿using API.Services;
 using BackendAPI.Models.Movie;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,12 +18,14 @@ namespace BackendAPI.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public List<MovieModel> GetMovies()
         {
             return context.Movies.OrderByDescending(c => c.MovieId).ToList();
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public IActionResult GetMovie(Guid id)
         {
             var movie = context.Movies.Find(id);
@@ -35,6 +38,7 @@ namespace BackendAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Manager")]
         public IActionResult CreateMovie(MovieDto movieDto)
         {
             var otherMovie = context.Movies.FirstOrDefault(c => c.Title == movieDto.Title);
@@ -61,6 +65,7 @@ namespace BackendAPI.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Manager")]
         public IActionResult EditMovie(Guid id, MovieDto movieDto)
         {
             var otherMovie = context.Movies.FirstOrDefault(c => c.Title == movieDto.Title);
@@ -88,6 +93,7 @@ namespace BackendAPI.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Manager")]
         public IActionResult DeleteMovie(Guid id)
         {
             var movie = context.Movies.Find(id);
