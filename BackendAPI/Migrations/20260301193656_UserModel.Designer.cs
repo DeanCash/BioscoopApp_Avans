@@ -4,6 +4,7 @@ using API.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BackendAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260301193656_UserModel")]
+    partial class UserModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -82,11 +85,6 @@ namespace BackendAPI.Migrations
                     b.Property<DateTimeOffset?>("PaidAtUtc")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasDefaultValue("Pin")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -101,7 +99,7 @@ namespace BackendAPI.Migrations
                     b.Property<Guid>("ScreeningId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("SeatId")
+                    b.Property<Guid>("SeatId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Status")
@@ -224,7 +222,8 @@ namespace BackendAPI.Migrations
                     b.HasOne("BackendAPI.Models.Seat.SeatModel", "Seat")
                         .WithMany()
                         .HasForeignKey("SeatId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Screening");
 
