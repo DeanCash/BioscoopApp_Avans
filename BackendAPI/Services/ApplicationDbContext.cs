@@ -26,6 +26,10 @@ namespace API.Services
                 .WithMany()
                 .HasForeignKey(o => o.ScreeningId)
                 .OnDelete(DeleteBehavior.Restrict); // of NoAction
+
+            modelBuilder.Entity<OrderModel>()
+                .HasIndex(o => new { o.ScreeningId, o.SeatId })
+                .IsUnique();
         }
 
         public ApplicationDbContext(DbContextOptions options) : base(options)

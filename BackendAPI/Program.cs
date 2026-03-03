@@ -1,4 +1,5 @@
 using API.Services;
+using BackendAPI.Services;
 using BackendAPI.Models.User;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -18,9 +19,18 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer("name=DefaultConnection");
+    if (OperatingSystem.IsMacOS())
+    {
+        var connectionString = builder.Configuration.GetConnectionString("MySqlConnection");
+        options.UseMySQL(connectionString);
+    }
+    else
+    {
+        options.UseSqlServer("name=DefaultConnection");
+    }
 });
 
+builder.Services.AddScoped<ReservationService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
     {
@@ -38,6 +48,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    DbSeeder.Seed(db);
     SeedUsers(db);
 }
 
