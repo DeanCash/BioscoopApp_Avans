@@ -1,105 +1,35 @@
-﻿using API.Services;
-using BackendAPI.Models.Movie;
-using Microsoft.AspNetCore.Http;
+using BackendAPI.DTOs.Movies;
+using BackendAPI.Services.Movies;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackendAPI.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class MoviesController : ControllerBase
     {
-        private readonly ApplicationDbContext context;
+        private readonly IMovieQueryService _movieQueryService;
 
-        public MoviesController(ApplicationDbContext context)
+        public MoviesController(IMovieQueryService movieQueryService)
         {
-            this.context = context;
+            _movieQueryService = movieQueryService;
         }
 
-        [HttpGet]
-        public List<MovieModel> GetMovies()
+        // GET api/movies/upcoming?daysAhead=14
+        [HttpGet("upcoming")]
+        public async Task<ActionResult<IReadOnlyList<UpcomingMovieDto>>> GetUpcomingMovies(
+            [FromQuery] int daysAhead = 14,
+            CancellationToken ct = default)
         {
-            return context.Movies.OrderByDescending(c => c.MovieId).ToList();
-        }
+            if (daysAhead < 1) daysAhead = 1;
+            if (daysAhead > 365) daysAhead = 365;
 
-        [HttpGet("{id}")]
-        public IActionResult GetMovie(int id)
-        {
-            var movie = context.Movies.Find(id);
-            if (movie == null)
-            {
-                return NotFound();
-            }
+            var result = await _movieQueryService.GetUpcomingMoviesAsync(
+                DateTimeOffset.UtcNow,
+                daysAhead,
+                ct: ct);
 
-            return Ok(movie);
-        }
-
-        [HttpPost]
-        public IActionResult CreateMovie(MovieDto movieDto)
-        {
-            var otherMovie = context.Movies.FirstOrDefault(c => c.Title == movieDto.Title);
-            if (otherMovie != null)
-            {
-                ModelState.AddModelError("Title", "The movie already exists in the database");
-                var validation = new ValidationProblemDetails(ModelState);
-                return BadRequest(validation);
-            }
-
-            var movie = new MovieModel
-            {
-                Title = movieDto.Title,
-                Description = movieDto.Description,
-                DurationMinutes = movieDto.DurationMinutes,
-                Age = movieDto.Age,
-                CreatedAtUtc = DateTime.Now,
-            };
-
-            context.Movies.Add(movie);
-            context.SaveChanges();
-
-            return Ok(movie);
-        }
-
-        [HttpPut("{id}")]
-        public IActionResult EditMovie(int id, MovieDto movieDto)
-        {
-            var otherMovie = context.Movies.FirstOrDefault(c => c.Title == movieDto.Title);
-            if (otherMovie != null)
-            {
-                ModelState.AddModelError("Title", "The movie already exists in the database");
-                var validation = new ValidationProblemDetails(ModelState);
-                return BadRequest(validation);
-            }
-
-            var movie = context.Movies.Find(id);
-            if (movie == null)
-            {
-                return NotFound();
-            }
-
-            movie.Title = movieDto.Title;
-            movie.Description = movieDto.Description;
-            movie.DurationMinutes = movieDto.DurationMinutes;
-            movie.Age = movieDto.Age;
-
-            context.SaveChanges();
-
-            return Ok(movie);
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult DeleteMovie(int id)
-        {
-            var movie = context.Movies.Find(id);
-            if (movie == null)
-            {
-                return NotFound();
-            }
-
-            context.Movies.Remove(movie);
-            context.SaveChanges();
-
-            return Ok(movie);
+            return Ok(result);
         }
     }
 }

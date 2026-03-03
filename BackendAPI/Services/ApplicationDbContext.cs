@@ -10,6 +10,17 @@ namespace API.Services
 {
     public class ApplicationDbContext : DbContext
     {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<HallModel> Halls { get; set; } = default!;
+        public DbSet<MovieModel> Movies { get; set; } = default!;
+        public DbSet<OrderModel> Orders { get; set; } = default!;
+        public DbSet<ScreeningModel> Screenings { get; set; } = default!;
+        public DbSet<SeatModel> Seats { get; set; } = default!;
+        public DbSet<TariffModel> Tariffs { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -18,24 +29,14 @@ namespace API.Services
                 .HasOne(o => o.Seat)
                 .WithMany()
                 .HasForeignKey(o => o.SeatId)
-                .OnDelete(DeleteBehavior.Restrict); // of NoAction
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<OrderModel>()
                 .HasOne(o => o.Screening)
                 .WithMany()
                 .HasForeignKey(o => o.ScreeningId)
-                .OnDelete(DeleteBehavior.Restrict); // of NoAction
+                .OnDelete(DeleteBehavior.Restrict);
         }
-
-        public ApplicationDbContext(DbContextOptions options) : base(options)
-        {
-        }
-
-        public DbSet<HallModel> Halls { get; set; }
-        public DbSet<MovieModel> Movies { get; set; }
-        public DbSet<OrderModel> Orders { get; set; }
-        public DbSet<ScreeningModel> Screenings { get; set; }
-        public DbSet<SeatModel> Seats { get; set; }
-        public DbSet<TariffModel> Tariffs { get; set; }
     }
 }
