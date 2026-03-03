@@ -82,6 +82,11 @@ namespace BackendAPI.Migrations
                     b.Property<DateTimeOffset?>("PaidAtUtc")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasDefaultValue("Pin")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -96,7 +101,7 @@ namespace BackendAPI.Migrations
                     b.Property<Guid>("ScreeningId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("SeatId")
+                    b.Property<Guid?>("SeatId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Status")
@@ -219,8 +224,7 @@ namespace BackendAPI.Migrations
                     b.HasOne("BackendAPI.Models.Seat.SeatModel", "Seat")
                         .WithMany()
                         .HasForeignKey("SeatId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Screening");
 

@@ -1,4 +1,5 @@
 using API.Services;
+using BackendAPI.Services.Movies;
 using BackendAPI.Services;
 using BackendAPI.Models.User;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -8,8 +9,17 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+        policy.WithOrigins(
+                "http://localhost:5100",
+                "https://localhost:7076")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
 
+builder.Services.AddScoped<IMovieQueryService, MovieQueryService>();
 builder.Services.AddControllers().AddJsonOptions(o =>
 {
     o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -59,10 +69,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("Frontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

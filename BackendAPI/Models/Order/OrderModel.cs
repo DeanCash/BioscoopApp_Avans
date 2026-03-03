@@ -10,10 +10,11 @@ namespace BackendAPI.Models.Order
         public Guid OrderId { get; set; }          // PK
 
         public Guid ScreeningId { get; set; }      // FK
-        public Guid SeatId { get; set; }           // FK
+        public Guid? SeatId { get; set; }          // FK (nullable, stoelkeuze volgt later)
 
         public string Status { get; set; } = null!;
         public string PaymentStatus { get; set; } = null!;
+        public string PaymentMethod { get; set; } = "Pin";  // Altijd PIN
         public decimal TotalAmount { get; set; }
 
         public string PrintCode { get; set; } = null!;    // unique
@@ -24,6 +25,6 @@ namespace BackendAPI.Models.Order
 
         // Navigation
         public ScreeningModel Screening { get; set; } = null!;
-        public SeatModel Seat { get; set; } = null!;
+        public SeatModel? Seat { get; set; }
     }
 }

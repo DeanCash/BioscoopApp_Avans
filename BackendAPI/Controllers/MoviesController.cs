@@ -1,3 +1,5 @@
+using BackendAPI.DTOs.Movies;
+using BackendAPI.Services.Movies;
 ﻿using API.Services;
 using BackendAPI.Models.Movie;
 using Microsoft.AspNetCore.Authorization;
@@ -6,10 +8,22 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BackendAPI.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class MoviesController : ControllerBase
     {
+        private readonly IMovieQueryService _movieQueryService;
+
+        public MoviesController(IMovieQueryService movieQueryService)
+        {
+            _movieQueryService = movieQueryService;
+        }
+
+        // GET api/movies/upcoming?daysAhead=14
+        [HttpGet("upcoming")]
+        public async Task<ActionResult<IReadOnlyList<UpcomingMovieDto>>> GetUpcomingMovies(
+            [FromQuery] int daysAhead = 14,
+            CancellationToken ct = default)
         private readonly ApplicationDbContext context;
 
         public MoviesController(ApplicationDbContext context)
@@ -96,16 +110,15 @@ namespace BackendAPI.Controllers
         [Authorize(Roles = "Manager")]
         public IActionResult DeleteMovie(Guid id)
         {
-            var movie = context.Movies.Find(id);
-            if (movie == null)
-            {
-                return NotFound();
-            }
+            if (daysAhead < 1) daysAhead = 1;
+            if (daysAhead > 365) daysAhead = 365;
 
-            context.Movies.Remove(movie);
-            context.SaveChanges();
+            var result = await _movieQueryService.GetUpcomingMoviesAsync(
+                DateTimeOffset.UtcNow,
+                daysAhead,
+                ct: ct);
 
-            return Ok(movie);
+            return Ok(result);
         }
     }
 }

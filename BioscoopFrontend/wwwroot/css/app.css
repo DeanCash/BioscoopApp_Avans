@@ -113,3 +113,78 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* ── Ticket overlay ─────────────────────────────────────────── */
+.ticket-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.ticket {
+    background: #fff;
+    border: 2px dashed #1b6ec2;
+    border-radius: 0.5rem;
+    padding: 2rem 2.5rem;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+
+.ticket-header h2 {
+    color: #1b6ec2;
+}
+
+.ticket-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    text-align: left;
+}
+
+.ticket-table th {
+    width: 35%;
+    color: #555;
+    font-weight: 600;
+    padding: 0.3rem 0;
+}
+
+.ticket-table td {
+    padding: 0.3rem 0;
+}
+
+.ticket-barcode {
+    font-family: monospace;
+    font-size: 1.4rem;
+    letter-spacing: 0.15rem;
+    color: #222;
+    margin: 0.5rem 0;
+}
+
+/* ── Print: toon alleen het ticket ─────────────────────────── */
+@media print {
+    body > * {
+        display: none !important;
+    }
+
+    .ticket-overlay {
+        position: static !important;
+        background: none !important;
+        display: block !important;
+    }
+
+    .ticket {
+        border: 2px dashed #000;
+        box-shadow: none;
+        max-width: 100%;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+}

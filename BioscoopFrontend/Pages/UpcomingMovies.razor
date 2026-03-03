@@ -1,0 +1,228 @@
+@page "/films"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>Eerstkomende Films</PageTitle>
+
+<h1>Eerstkomende Films</h1>
+<p class="text-muted">Kies een voorstelling en betaal met PIN.</p>
+
+@if (movies == null)
+{
+    <p><em>Films laden...</em></p>
+}
+else if (movies.Count == 0)
+{
+    <p>Geen films gevonden voor de komende 14 dagen.</p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var movie in movies)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">@movie.Title</h5>
+                        <p class="card-text text-muted">
+                            Eerste voorstelling:
+                            <strong>@movie.FirstScreeningAtUtc.LocalDateTime.ToString("dd-MM-yyyy HH:mm")</strong>
+                        </p>
+
+                        <h6 class="mt-3">Voorstellingen</h6>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var screening in movie.Screenings)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>@screening.StartTimeUtc.LocalDateTime.ToString("dd-MM-yyyy HH:mm")</span>
+                                    <button class="btn btn-sm btn-primary"
+                                            @onclick="() => SelectScreening(movie, screening)">
+                                        Kies voorstelling
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@* ── PIN betaalscherm ── *@
+@if (paymentStep && selectedMovie != null && selectedScreening != null)
+{
+    <div class="ticket-overlay" @onclick="CancelPayment">
+        <div class="ticket" @onclick:stopPropagation>
+            <div class="ticket-header">
+                <h2>&#128179; PIN Betaling</h2>
+            </div>
+            <hr />
+            <table class="ticket-table">
+                <tr>
+                    <th>Film</th>
+                    <td>@selectedMovie.Title</td>
+                </tr>
+                <tr>
+                    <th>Datum</th>
+                    <td>@selectedScreening.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</td>
+                </tr>
+                <tr>
+                    <th>Aanvang</th>
+                    <td>@selectedScreening.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</td>
+                </tr>
+                <tr>
+                    <th>Bedrag</th>
+                    <td><strong>&#8364;&nbsp;12,50</strong></td>
+                </tr>
+            </table>
+            <hr />
+            <div class="alert alert-info text-center py-2 mb-3">
+                <small>&#128274;&nbsp;Alleen PIN-betaling &ndash; geen contant geld geaccepteerd</small>
+            </div>
+            @if (paymentError != null)
+            {
+                <div class="alert alert-danger py-2">@paymentError</div>
+            }
+            <div class="no-print d-flex gap-2 justify-content-center">
+                <button class="btn btn-success btn-lg" @onclick="ConfirmPinPayment" disabled="@isProcessing">
+                    @if (isProcessing)
+                    {
+                        <span>Verwerken&#8230;</span>
+                    }
+                    else
+                    {
+                        <span>&#128179;&nbsp;Betaal met PIN</span>
+                    }
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="CancelPayment" disabled="@isProcessing">
+                    Annuleren
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@* ── Ticketscherm (na succesvolle betaling) ── *@
+@if (!paymentStep && selectedMovie != null && selectedScreening != null)
+{
+    <div class="ticket-overlay" @onclick="CloseTicket">
+        <div class="ticket" @onclick:stopPropagation>
+            <div class="ticket-header">
+                <h2>&#127903; Bioscoopticket</h2>
+            </div>
+            <hr />
+            <table class="ticket-table">
+                <tr>
+                    <th>Film</th>
+                    <td>@selectedMovie.Title</td>
+                </tr>
+                <tr>
+                    <th>Datum</th>
+                    <td>@selectedScreening.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</td>
+                </tr>
+                <tr>
+                    <th>Aanvang</th>
+                    <td>@selectedScreening.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</td>
+                </tr>
+                @if (printCode != null)
+                {
+                    <tr>
+                        <th>Code</th>
+                        <td><strong>@printCode</strong></td>
+                    </tr>
+                }
+                <tr>
+                    <th>Betaling</th>
+                    <td>&#10003;&nbsp;PIN</td>
+                </tr>
+            </table>
+            <hr />
+            <p class="ticket-barcode">|||| |||| | || ||| || ||||</p>
+            <div class="no-print mt-3 d-flex gap-2 justify-content-center">
+                <button class="btn btn-success" @onclick="PrintTicket">&#128424; Afdrukken</button>
+                <button class="btn btn-outline-secondary" @onclick="CloseTicket">Sluiten</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<UpcomingMovieDto>? movies;
+    private UpcomingMovieDto? selectedMovie;
+    private UpcomingScreeningDto? selectedScreening;
+    private bool paymentStep;
+    private bool isProcessing;
+    private string? paymentError;
+    private string? printCode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        movies = await Http.GetFromJsonAsync<List<UpcomingMovieDto>>("api/movies/upcoming");
+    }
+
+    private void SelectScreening(UpcomingMovieDto movie, UpcomingScreeningDto screening)
+    {
+        selectedMovie    = movie;
+        selectedScreening = screening;
+        paymentStep      = true;
+        paymentError     = null;
+        printCode        = null;
+    }
+
+    private async Task ConfirmPinPayment()
+    {
+        isProcessing = true;
+        paymentError = null;
+
+        try
+        {
+            var createRequest = new { ScreeningId = selectedScreening!.ScreeningId, TotalAmount = 12.50m };
+            var createResponse = await Http.PostAsJsonAsync("api/orders", createRequest);
+
+            if (!createResponse.IsSuccessStatusCode)
+            {
+                paymentError = "Betaling mislukt. Probeer opnieuw.";
+                return;
+            }
+
+            var order = await createResponse.Content.ReadFromJsonAsync<OrderDto>();
+            if (order != null)
+            {
+                await Http.PostAsync($"api/orders/{order.OrderId}/pay", null);
+                printCode = order.PrintCode;
+            }
+
+            paymentStep = false;
+        }
+        catch
+        {
+            // API niet beschikbaar – toon ticket zonder code (demo-modus)
+            paymentStep = false;
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void CancelPayment()
+    {
+        selectedMovie     = null;
+        selectedScreening = null;
+        paymentStep       = false;
+        paymentError      = null;
+    }
+
+    private void CloseTicket()
+    {
+        selectedMovie     = null;
+        selectedScreening = null;
+        printCode         = null;
+    }
+
+    private async Task PrintTicket()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+}
