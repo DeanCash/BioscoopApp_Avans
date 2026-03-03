@@ -23,7 +23,7 @@ namespace BackendAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetMovie(int id)
+        public IActionResult GetMovie(Guid id)
         {
             var movie = context.Movies.Find(id);
             if (movie == null)
@@ -61,7 +61,7 @@ namespace BackendAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult EditMovie(int id, MovieDto movieDto)
+        public IActionResult EditMovie(Guid id, MovieDto movieDto)
         {
             var otherMovie = context.Movies.FirstOrDefault(c => c.Title == movieDto.Title);
             if (otherMovie != null)
@@ -88,7 +88,7 @@ namespace BackendAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteMovie(int id)
+        public IActionResult DeleteMovie(Guid id)
         {
             var movie = context.Movies.Find(id);
             if (movie == null)

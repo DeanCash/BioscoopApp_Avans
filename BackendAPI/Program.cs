@@ -1,4 +1,5 @@
 using API.Services;
+using BackendAPI.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,10 +12,26 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer("name=DefaultConnection");
+    if (OperatingSystem.IsMacOS())
+    {
+        var connectionString = builder.Configuration.GetConnectionString("MySqlConnection");
+        options.UseMySQL(connectionString);
+    }
+    else
+    {
+        options.UseSqlServer("name=DefaultConnection");
+    }
 });
 
+builder.Services.AddScoped<ReservationService>();
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    DbSeeder.Seed(db);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
