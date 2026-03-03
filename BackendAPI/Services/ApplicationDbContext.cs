@@ -4,6 +4,7 @@ using BackendAPI.Models.Order;
 using BackendAPI.Models.Screening;
 using BackendAPI.Models.Seat;
 using BackendAPI.Models.Tariff;
+using BackendAPI.Models.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services
@@ -37,5 +38,6 @@ namespace API.Services
         public DbSet<ScreeningModel> Screenings { get; set; }
         public DbSet<SeatModel> Seats { get; set; }
         public DbSet<TariffModel> Tariffs { get; set; }
+        public DbSet<UserModel> Users { get; set; }
     }
 }
