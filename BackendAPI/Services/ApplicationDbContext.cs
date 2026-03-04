@@ -11,16 +11,17 @@ namespace API.Services
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        public ApplicationDbContext(DbContextOptions options) : base(options)
         {
         }
 
-        public DbSet<HallModel> Halls { get; set; } = default!;
-        public DbSet<MovieModel> Movies { get; set; } = default!;
-        public DbSet<OrderModel> Orders { get; set; } = default!;
-        public DbSet<ScreeningModel> Screenings { get; set; } = default!;
-        public DbSet<SeatModel> Seats { get; set; } = default!;
-        public DbSet<TariffModel> Tariffs { get; set; } = default!;
+        public DbSet<HallModel> Halls { get; set; }
+        public DbSet<MovieModel> Movies { get; set; }
+        public DbSet<OrderModel> Orders { get; set; }
+        public DbSet<ScreeningModel> Screenings { get; set; }
+        public DbSet<SeatModel> Seats { get; set; }
+        public DbSet<TariffModel> Tariffs { get; set; }
+        public DbSet<UserModel> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -43,17 +44,5 @@ namespace API.Services
                 .HasIndex(o => new { o.ScreeningId, o.SeatId })
                 .IsUnique();
         }
-
-        public ApplicationDbContext(DbContextOptions options) : base(options)
-        {
-        }
-
-        public DbSet<HallModel> Halls { get; set; }
-        public DbSet<MovieModel> Movies { get; set; }
-        public DbSet<OrderModel> Orders { get; set; }
-        public DbSet<ScreeningModel> Screenings { get; set; }
-        public DbSet<SeatModel> Seats { get; set; }
-        public DbSet<TariffModel> Tariffs { get; set; }
-        public DbSet<UserModel> Users { get; set; }
     }
 }

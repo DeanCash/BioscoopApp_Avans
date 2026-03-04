@@ -15,7 +15,7 @@ namespace BackendAPI.Models.Order
         public string Status { get; set; } = null!;
         public string PaymentStatus { get; set; } = null!;
         public string PaymentMethod { get; set; } = "Pin";  // Altijd PIN
-        public decimal TotalAmount { get; set; }
+        public decimal TotalAmount { get; set; } = 0;
 
         public string PrintCode { get; set; } = null!;    // unique
 
