@@ -1,32 +1,20 @@
+using API.Services;
 using BackendAPI.DTOs.Movies;
-using BackendAPI.Services.Movies;
-﻿using API.Services;
 using BackendAPI.Models.Movie;
+using BackendAPI.Services.Movies;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackendAPI.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class MoviesController : ControllerBase
     {
+        private readonly ApplicationDbContext context;
         private readonly IMovieQueryService _movieQueryService;
 
-        public MoviesController(IMovieQueryService movieQueryService)
-        {
-            _movieQueryService = movieQueryService;
-        }
-
-        // GET api/movies/upcoming?daysAhead=14
-        [HttpGet("upcoming")]
-        public async Task<ActionResult<IReadOnlyList<UpcomingMovieDto>>> GetUpcomingMovies(
-            [FromQuery] int daysAhead = 14,
-            CancellationToken ct = default)
-        private readonly ApplicationDbContext context;
-
-        public MoviesController(ApplicationDbContext context)
+        public MoviesController(ApplicationDbContext context, IMovieQueryService movieQueryService)
         {
             this.context = context;
         }
@@ -109,6 +97,24 @@ namespace BackendAPI.Controllers
         [HttpDelete("{id}")]
         [Authorize(Roles = "Manager")]
         public IActionResult DeleteMovie(Guid id)
+        {
+            var movie = context.Movies.Find(id);
+            if (movie == null)
+            {
+                return NotFound();
+            }
+
+            context.Movies.Remove(movie);
+            context.SaveChanges();
+
+            return Ok(movie);
+        }
+
+        // GET api/movies/upcoming?daysAhead=14
+        [HttpGet("upcoming")]
+        public async Task<ActionResult<IReadOnlyList<UpcomingMovieDto>>> GetUpcomingMovies(
+            [FromQuery] int daysAhead = 14,
+            CancellationToken ct = default)
         {
             if (daysAhead < 1) daysAhead = 1;
             if (daysAhead > 365) daysAhead = 365;

@@ -29,14 +29,19 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
+    // If on "MacOS"
     if (OperatingSystem.IsMacOS())
     {
         var connectionString = builder.Configuration.GetConnectionString("MySqlConnection");
         options.UseMySQL(connectionString);
     }
+    // If on "Windows"
     else
     {
-        options.UseSqlServer("name=DefaultConnection");
+        options.UseSqlServer("name=DefaultConnection", (s) =>
+        {
+            s.EnableRetryOnFailure(3);
+        });
     }
 });
 
@@ -53,12 +58,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    DbSeeder.Seed(db);
+    //DbSeeder.Seed(db);
     SeedUsers(db);
 }
 
@@ -74,6 +82,12 @@ app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.Run();
 
