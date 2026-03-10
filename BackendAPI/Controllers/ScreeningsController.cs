@@ -44,6 +44,41 @@ namespace BackendAPI.Controllers
             return Ok(screenings);
         }
 
+        [HttpGet("overview")]
+        [AllowAnonymous]
+        public IActionResult GetScreeningsOverview()
+        {
+            var screenings = context.Screenings
+                .AsNoTracking()
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .OrderBy(s => s.StartTimeUtc)
+                .Select(s => new
+                {
+                    screeningId = s.ScreeningId,
+                    movieTitle = s.Movie.Title,
+                    hallNumber = s.Hall.Number,
+                    startTimeUtc = s.StartTimeUtc
+                })
+                .ToList();
+
+            return Ok(screenings);
+        }
+
+        [HttpGet("{id}")]
+        [AllowAnonymous]
+        public IActionResult GetScreening(Guid id)
+        {
+            var screening = context.Screenings
+                .AsNoTracking()
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .FirstOrDefault(s => s.ScreeningId == id);
+
+            if (screening == null) return NotFound();
+            return Ok(screening);
+        }
+        
         [HttpGet("available-seats")]
         [AllowAnonymous]
         public IActionResult GetAvailableSeats([FromQuery] Guid movieId)
@@ -52,7 +87,7 @@ namespace BackendAPI.Controllers
                 .AsNoTracking()
                 .Where(s => s.MovieId == movieId)
                 .Include(s => s.Hall)
-                    .ThenInclude(h => h.Seats)
+                .ThenInclude(h => h.Seats)
                 .ToList();
 
             // Count reserved orders per screening using a join instead of Contains
@@ -77,19 +112,6 @@ namespace BackendAPI.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{id}")]
-        [AllowAnonymous]
-        public IActionResult GetScreening(Guid id)
-        {
-            var screening = context.Screenings
-                .AsNoTracking()
-                .Include(s => s.Movie)
-                .Include(s => s.Hall)
-                .FirstOrDefault(s => s.ScreeningId == id);
-
-            if (screening == null) return NotFound();
-            return Ok(screening);
-        }
 
         [HttpPost]
         [Authorize(Roles = "Manager")]

@@ -72,7 +72,7 @@ namespace BackendAPI.Controllers
         [Authorize(Roles = "Manager")]
         public IActionResult EditMovie(Guid id, MovieDto movieDto)
         {
-            var otherMovie = context.Movies.FirstOrDefault(c => c.Title == movieDto.Title);
+            var otherMovie = context.Movies.FirstOrDefault(c => c.Title == movieDto.Title && c.MovieId != id);
             if (otherMovie != null)
             {
                 ModelState.AddModelError("Title", "The movie already exists in the database");

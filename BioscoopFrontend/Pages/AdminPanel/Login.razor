@@ -1,0 +1,148 @@
+﻿@page "/admin-panel/login"
+@using System.Net
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>Manager Login</PageTitle>
+
+<div class="login-page">
+<div class="login-card">
+    <div class="form-group" style="text-align:center; margin-bottom:32px;">
+        <div style="font-size:32px; margin-bottom:10px;">🎬</div>
+        <h2 style="margin:0; font-size:20px; font-weight:800; color:#1a2040;">Admin Panel</h2>
+        <p style="margin:6px 0 0; font-size:14px; color:#5a6380;">Sign in to continue</p>
+    </div>
+
+    <div class="form-group">
+            <label class="form-label">
+                <span class="label-icon">👤</span>
+                Username
+            </label>
+            <input class="form-input"
+                   @bind="loginModel.Username"
+                   placeholder="admin" />
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">
+                <span class="label-icon">🔒</span>
+                Password
+            </label>
+            <input class="form-input"
+                   type="password"
+                   @bind="loginModel.Password"
+                   placeholder="••••••••" />
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-error">
+                <span class="alert-icon">⚠️</span>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        <button class="login-button" @onclick="HandleLogin" disabled="@isLoading">
+            @(isLoading ? "Logging in..." : "Login →")
+        </button>
+    </div>
+</div>
+
+@code {
+    private LoginRequest loginModel = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    public class LoginRequest
+    {
+        public string Username { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+
+    public class LoginResponse
+    {
+        public string Role { get; set; } = "";
+    }
+
+    public class JsLoginResult
+    {
+        public bool ok { get; set; }
+        public int status { get; set; }
+        public LoginResponse? data { get; set; }
+    }
+
+    private async Task HandleLogin()
+    {
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(loginModel.Username))
+        {
+            errorMessage = "Username is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(loginModel.Password))
+        {
+            errorMessage = "Password is required.";
+            return;
+        }
+
+        isLoading = true;
+
+        try
+        {
+            var result = await JS.InvokeAsync<JsLoginResult>(
+                "authInterop.login",
+                loginModel.Username,
+                loginModel.Password
+            );
+
+            if (result.status == 401)
+            {
+                errorMessage = "Invalid username or password.";
+                return;
+            }
+
+            if (result.status == 403)
+            {
+                errorMessage = "You do not have permission to access this panel.";
+                return;
+            }
+
+            if (!result.ok)
+            {
+                errorMessage = $"Login failed ({result.status}).";
+                return;
+            }
+
+            if (result.data is null || string.IsNullOrWhiteSpace(result.data.Role))
+            {
+                errorMessage = "Login succeeded, but no role was returned.";
+                return;
+            }
+
+            if (result.data.Role == "Manager")
+            {
+                Nav.NavigateTo("/admin-panel/manager", forceLoad: true);
+                return;
+            }
+
+            if (result.data.Role == "Cashier")
+            {
+                Nav.NavigateTo("/admin-panel/cashier", forceLoad: true);
+                return;
+            }
+
+            errorMessage = "Unknown user role.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Something went wrong: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
