@@ -3,7 +3,6 @@ using System;
 using API.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -18,18 +17,16 @@ namespace BackendAPI.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.3")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
-
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("BackendAPI.Models.Hall.HallModel", b =>
                 {
                     b.Property<Guid>("HallId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetime");
 
                     b.Property<int>("LayoutType")
                         .HasColumnType("int");
@@ -46,24 +43,24 @@ namespace BackendAPI.Migrations
                 {
                     b.Property<Guid>("MovieId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<int>("Age")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetime");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("MovieId");
 
@@ -74,38 +71,38 @@ namespace BackendAPI.Migrations
                 {
                     b.Property<Guid>("OrderId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetime");
 
                     b.Property<DateTimeOffset?>("PaidAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetime");
 
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("PrintCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset?>("PrintedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetime");
 
                     b.Property<Guid>("ScreeningId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid?>("SeatId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
@@ -115,8 +112,7 @@ namespace BackendAPI.Migrations
                     b.HasIndex("SeatId");
 
                     b.HasIndex("ScreeningId", "SeatId")
-                        .IsUnique()
-                        .HasFilter("[SeatId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("Orders");
                 });
@@ -125,19 +121,19 @@ namespace BackendAPI.Migrations
                 {
                     b.Property<Guid>("ScreeningId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetime");
 
                     b.Property<Guid>("HallId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid>("MovieId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTimeOffset>("StartTimeUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetime");
 
                     b.HasKey("ScreeningId");
 
@@ -152,14 +148,14 @@ namespace BackendAPI.Migrations
                 {
                     b.Property<Guid>("SeatId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid>("HallId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("RowLabel")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("SeatNumber")
                         .HasColumnType("int");
@@ -175,18 +171,18 @@ namespace BackendAPI.Migrations
                 {
                     b.Property<Guid>("TariffId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
                     b.Property<string>("TariffType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("TariffId");
 
@@ -196,15 +192,15 @@ namespace BackendAPI.Migrations
             modelBuilder.Entity("BackendAPI.Models.User.UserModel", b =>
                 {
                     b.Property<string>("Username")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");

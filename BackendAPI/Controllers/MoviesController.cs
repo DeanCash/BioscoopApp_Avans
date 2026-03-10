@@ -17,6 +17,7 @@ namespace BackendAPI.Controllers
         public MoviesController(ApplicationDbContext context, IMovieQueryService movieQueryService)
         {
             this.context = context;
+            _movieQueryService = movieQueryService;
         }
 
         [HttpGet]
@@ -116,6 +117,7 @@ namespace BackendAPI.Controllers
 
         // GET api/movies/upcoming?daysAhead=14
         [HttpGet("upcoming")]
+        [AllowAnonymous]
         public async Task<ActionResult<IReadOnlyList<UpcomingMovieDto>>> GetUpcomingMovies(
             [FromQuery] int daysAhead = 14,
             CancellationToken ct = default)

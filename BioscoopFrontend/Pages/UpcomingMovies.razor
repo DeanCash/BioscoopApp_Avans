@@ -11,6 +11,10 @@
 {
     <p><em>Films laden...</em></p>
 }
+else if (loadError != null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
 else if (movies.Count == 0)
 {
     <p>Geen films gevonden voor de komende 14 dagen.</p>
@@ -155,10 +159,19 @@ else
     private bool isProcessing;
     private string? paymentError;
     private string? printCode;
+    private string? loadError;
 
     protected override async Task OnInitializedAsync()
     {
-        movies = await Http.GetFromJsonAsync<List<UpcomingMovieDto>>("api/movies/upcoming");
+        try
+        {
+            movies = await Http.GetFromJsonAsync<List<UpcomingMovieDto>>("api/movies/upcoming");
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Kon films niet ophalen: {ex.Message}";
+            movies = [];
+        }
     }
 
     private void SelectScreening(UpcomingMovieDto movie, UpcomingScreeningDto screening)
