@@ -1,7 +1,6 @@
 using API.Services;
 using BackendAPI.DTOs.Tariffs;
 using BackendAPI.Models.Tariff;
-using BackendAPI.Services.Movies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,12 +12,7 @@ namespace BackendAPI.Controllers
     public class TariffsController : ControllerBase
     {
         private readonly ApplicationDbContext context;
-        private readonly ApplicationDbContext _db;
-        
-        public TariffsController(ApplicationDbContext db)
-        {
-            _db = db;
-        }
+
         public TariffsController(ApplicationDbContext context)
         {
             this.context = context;
@@ -26,9 +20,21 @@ namespace BackendAPI.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public List<TariffModel> GetTariffs()
+        public async Task<IActionResult> GetTariffs()
         {
-            return context.Tariffs.OrderByDescending(c => c.TariffType).ToList();
+            var tariffs = await context.Tariffs
+                .OrderBy(t => t.SortOrder)
+                .Select(t => new
+                {
+                    t.TariffId,
+                    t.TariffType,
+                    t.DisplayName,
+                    t.Price,
+                    t.SortOrder
+                })
+                .ToListAsync();
+
+            return Ok(tariffs);
         }
 
         [HttpGet("{id}")]
@@ -110,24 +116,6 @@ namespace BackendAPI.Controllers
             context.SaveChanges();
 
             return Ok(movie);
-        }
-        
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var tariffs = await _db.Tariffs
-                .OrderBy(t => t.SortOrder)
-                .Select(t => new
-                {
-                    t.TariffId,
-                    t.TariffType,
-                    t.DisplayName,
-                    t.Price,
-                    t.SortOrder
-                })
-                .ToListAsync();
-
-            return Ok(tariffs);
         }
     }
 }
