@@ -33,6 +33,11 @@
                 <label>Description</label>
                 <textarea class="admin-textarea" @bind="model.Description"></textarea>
             </div>
+            
+            <div class="admin-form-group">
+                <label>Genre</label>
+                <input class="admin-input" @bind="model.Genre" />
+            </div>
 
             <div class="admin-form-group">
                 <label>Duration in minutes</label>
@@ -71,6 +76,7 @@ public class MovieDto
         public string Description { get; set; } = "";
         public int DurationMinutes { get; set; }
         public int Age { get; set; }
+        public string Genre { get; set; }
     }
 
     private async Task Save()

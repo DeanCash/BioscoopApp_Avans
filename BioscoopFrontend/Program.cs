@@ -15,7 +15,7 @@ builder.Services.AddScoped(sp =>
     handler.InnerHandler = new HttpClientHandler();
     return new HttpClient(handler)
     {
-        BaseAddress = new Uri("https://localhost:7120/")
+        BaseAddress = new Uri("http://localhost:5033/")
     };
 });
 
