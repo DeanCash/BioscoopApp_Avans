@@ -1,0 +1,84 @@
+﻿@page "/admin-panel/halls/create"
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using BioscoopFrontend.Services
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject AuthService AuthService
+
+<div class="admin-page">
+    <div class="admin-card">
+        <div class="admin-header">
+            <div>
+                <h1>Create Hall</h1>
+                <p class="admin-subtitle">Add a new hall</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-error">
+                <span class="alert-icon">⚠️</span>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        <div class="admin-form">
+            <div class="admin-form-group">
+                <label>Hall number</label>
+                <input class="admin-input" type="number" @bind="model.Number" />
+            </div>
+
+            <div class="admin-form-group">
+                <label>Layout type</label>
+                <select class="admin-select" @bind="model.LayoutType">
+                    <option value="0">100 seats</option>
+                    <option value="1">150 seats</option>
+                    <option value="2">200 seats</option>
+                </select>
+            </div>
+
+            <div class="admin-actions">
+                <button class="primary-button" @onclick="Save">Save</button>
+                <button class="secondary-button" @onclick="Cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+private HallDto model = new();
+private string? errorMessage;
+
+protected override async Task OnInitializedAsync()
+{
+    if (!await AuthService.IsAuthenticatedAsync())
+    {
+        Nav.NavigateTo("/admin-panel/login", forceLoad: true);
+        return;
+    }
+}
+
+public class HallDto
+    {
+        public int Number { get; set; }
+        public int LayoutType { get; set; }
+    }
+
+    private async Task Save()
+    {
+        var response = await Http.PostAsJsonAsync("/api/halls", model);
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = await ApiErrorHelper.ReadErrorAsync(response);
+            return;
+        }
+
+        Nav.NavigateTo("/admin-panel/manager", forceLoad: true);
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/admin-panel/manager");
+    }
+}

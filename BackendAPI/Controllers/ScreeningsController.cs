@@ -44,6 +44,27 @@ namespace BackendAPI.Controllers
             return Ok(screenings);
         }
 
+        [HttpGet("overview")]
+        [AllowAnonymous]
+        public IActionResult GetScreeningsOverview()
+        {
+            var screenings = context.Screenings
+                .AsNoTracking()
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .OrderBy(s => s.StartTimeUtc)
+                .Select(s => new
+                {
+                    screeningId = s.ScreeningId,
+                    movieTitle = s.Movie.Title,
+                    hallNumber = s.Hall.Number,
+                    startTimeUtc = s.StartTimeUtc
+                })
+                .ToList();
+
+            return Ok(screenings);
+        }
+
         [HttpGet("{id}")]
         [AllowAnonymous]
         public IActionResult GetScreening(Guid id)
@@ -57,6 +78,40 @@ namespace BackendAPI.Controllers
             if (screening == null) return NotFound();
             return Ok(screening);
         }
+        
+        [HttpGet("available-seats")]
+        [AllowAnonymous]
+        public IActionResult GetAvailableSeats([FromQuery] Guid movieId)
+        {
+            var screenings = context.Screenings
+                .AsNoTracking()
+                .Where(s => s.MovieId == movieId)
+                .Include(s => s.Hall)
+                .ThenInclude(h => h.Seats)
+                .ToList();
+
+            // Count reserved orders per screening using a join instead of Contains
+            var reservedByScreening = context.Orders
+                .AsNoTracking()
+                .Join(
+                    context.Screenings.Where(s => s.MovieId == movieId),
+                    o => o.ScreeningId,
+                    s => s.ScreeningId,
+                    (o, s) => o.ScreeningId
+                )
+                .GroupBy(id => id)
+                .Select(g => new { ScreeningId = g.Key, Count = g.Count() })
+                .ToList()
+                .ToDictionary(x => x.ScreeningId, x => x.Count);
+
+            var result = screenings.ToDictionary(
+                s => s.ScreeningId,
+                s => s.Hall.Seats.Count - reservedByScreening.GetValueOrDefault(s.ScreeningId, 0)
+            );
+
+            return Ok(result);
+        }
+
 
         [HttpPost]
         [Authorize(Roles = "Manager")]

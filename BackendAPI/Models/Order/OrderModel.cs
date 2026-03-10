@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using BackendAPI.Models.Seat;
 using BackendAPI.Models.Screening;
+using BackendAPI.Models.Tariff;
 
 namespace BackendAPI.Models.Order
 {
@@ -11,6 +12,7 @@ namespace BackendAPI.Models.Order
 
         public Guid ScreeningId { get; set; }      // FK
         public Guid? SeatId { get; set; }          // FK (nullable, stoelkeuze volgt later)
+        public Guid? TariffId { get; set; }        // FK
 
         public string Status { get; set; } = null!;
         public string PaymentStatus { get; set; } = null!;
@@ -26,5 +28,6 @@ namespace BackendAPI.Models.Order
         // Navigation
         public ScreeningModel Screening { get; set; } = null!;
         public SeatModel? Seat { get; set; }
+        public TariffModel? Tariff { get; set; }
     }
 }

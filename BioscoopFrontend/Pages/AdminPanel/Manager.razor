@@ -1,0 +1,315 @@
+﻿@page "/admin-panel/manager"
+@using System.Net
+@using Microsoft.AspNetCore.Authorization
+@using System.Net.Http.Json
+@using BioscoopFrontend.Services
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject AuthService AuthService
+@inject IJSRuntime JS
+
+<PageTitle>Manager Dashboard</PageTitle>
+
+<div class="dashboard-page">
+    <div class="dashboard-header">
+        <div>
+            <h1>MANAGER DASHBOARD</h1>
+            <p>Manage films, halls and showings</p>
+        </div>
+
+        <div class="header-actions">
+            <button class="logout-button" @onclick="Logout">↪ Logout</button>
+            <button class="back-button" @onclick="GoBack">←</button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-error">
+            <span class="alert-icon">⚠️</span>
+            <span>@errorMessage</span>
+        </div>
+    }
+
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h2>Films</h2>
+            <button class="add-button" @onclick="AddFilm">＋ Add film</button>
+        </div>
+
+        <div class="list-box">
+            @if (movies.Count == 0)
+            {
+                <div class="empty-row">No films found.</div>
+            }
+            else
+            {
+                @foreach (var movie in movies)
+                {
+                    <div class="list-row">
+                        <div class="row-text">
+                            @movie.Title - @movie.Description - @movie.DurationMinutes min
+                        </div>
+
+                        <div class="row-actions">
+                            <button class="edit-button" @onclick="() => EditFilm(movie.MovieId)">✎ Edit</button>
+                            <button class="delete-button" @onclick='() => OpenDeleteModal("film", movie.MovieId, movie.Title)'>Delete</button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h2>Halls</h2>
+            <button class="add-button" @onclick="AddHall">＋ Add hall</button>
+        </div>
+
+        <div class="list-box">
+            @if (halls.Count == 0)
+            {
+                <div class="empty-row">No halls found.</div>
+            }
+            else
+            {
+                @foreach (var hall in halls)
+                {
+                    <div class="list-row">
+                        <div class="row-text">
+                            Hall @hall.Number - @GetSeatText(hall.LayoutType)
+                        </div>
+
+                        <div class="row-actions">
+                            <button class="edit-button" @onclick="() => EditHall(hall.HallId)">✎ Edit</button>
+                            <button class="delete-button" @onclick='() => OpenDeleteModal("hall", hall.HallId, $"Hall {hall.Number}")'>Delete</button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h2>Showings</h2>
+            <button class="add-button" @onclick="AddShowing">＋ Add showing</button>
+        </div>
+
+        <div class="list-box">
+            @if (screenings.Count == 0)
+            {
+                <div class="empty-row">No showings found.</div>
+            }
+            else
+            {
+                @foreach (var screening in screenings)
+                {
+                    <div class="list-row">
+                        <div class="row-text">
+                            @screening.MovieTitle - Hall @screening.HallNumber - @screening.StartTimeUtc.ToLocalTime().ToString("HH:mm - dd/MM/yyyy")
+                        </div>
+
+                        <div class="row-actions">
+                            <button class="edit-button" @onclick="() => EditShowing(screening.ScreeningId)">✎ Edit</button>
+                            <button class="delete-button" @onclick='() => OpenDeleteModal("showing", screening.ScreeningId, screening.MovieTitle)'>Delete</button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </section>
+
+    @if (showDeleteModal)
+    {
+        <div class="modal-backdrop">
+            <div class="modal-box">
+                <h3>Delete item</h3>
+                <p>Are you sure you want to delete <strong>@deleteItemName</strong>?</p>
+
+                <div class="admin-actions">
+                    <button class="danger-button" @onclick="ConfirmDelete">Delete</button>
+                    <button class="secondary-button" @onclick="CloseDeleteModal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string? errorMessage;
+
+    private List<MovieItem> movies = new();
+    private List<HallItem> halls = new();
+    private List<ScreeningItem> screenings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var role = await AuthService.GetRoleAsync();
+        if (role != "Manager")
+        {
+            Nav.NavigateTo("/admin-panel/login", forceLoad: true);
+            return;
+        }
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        errorMessage = null;
+
+        try
+        {
+            var movieResult = await Http.GetFromJsonAsync<List<MovieItem>>("/api/movies");
+            movies = movieResult ?? new();
+
+            var hallResult = await Http.GetFromJsonAsync<List<HallItem>>("/api/halls");
+            halls = hallResult ?? new();
+
+            var screeningResult = await Http.GetFromJsonAsync<List<ScreeningItem>>("/api/screenings/overview");
+            screenings = screeningResult ?? new();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load dashboard data: {ex.Message}";
+        }
+    }
+
+    private async Task Logout()
+    {
+        try
+        {
+            await JS.InvokeAsync<object>("authInterop.logout");
+        }
+        catch
+        {
+        }
+
+        Nav.NavigateTo("/admin-panel/login", forceLoad: true);
+    }
+
+    private void GoBack()
+    {
+        Nav.NavigateTo("/", forceLoad: true);
+    }
+
+    private void AddFilm() => Nav.NavigateTo("/admin-panel/films/create");
+    private void AddHall() => Nav.NavigateTo("/admin-panel/halls/create");
+    private void AddShowing() => Nav.NavigateTo("/admin-panel/showings/create");
+
+    private void EditFilm(Guid id) => Nav.NavigateTo($"/admin-panel/films/edit/{id}");
+    private void EditHall(Guid id) => Nav.NavigateTo($"/admin-panel/halls/edit/{id}");
+    private void EditShowing(Guid id) => Nav.NavigateTo($"/admin-panel/showings/edit/{id}");
+
+    private async Task DeleteFilm(Guid id)
+    {
+        var response = await Http.DeleteAsync($"/api/movies/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = await response.Content.ReadAsStringAsync();
+            return;
+        }
+
+        await LoadData();
+    }
+
+    private async Task DeleteHall(Guid id)
+    {
+        var response = await Http.DeleteAsync($"/api/halls/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = await response.Content.ReadAsStringAsync();
+            return;
+        }
+
+        await LoadData();
+    }
+
+    private async Task DeleteShowing(Guid id)
+    {
+        var response = await Http.DeleteAsync($"/api/screenings/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = await response.Content.ReadAsStringAsync();
+            return;
+        }
+
+        await LoadData();
+    }
+
+    private string GetSeatText(int layoutType)
+    {
+        return layoutType switch
+        {
+            0 => "100 seats",
+            1 => "150 seats",
+            2 => "200 seats",
+            _ => "Unknown layout"
+        };
+    }
+
+    public class MovieItem
+    {
+        public Guid MovieId { get; set; }
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int DurationMinutes { get; set; }
+    }
+
+    public class HallItem
+    {
+        public Guid HallId { get; set; }
+        public int Number { get; set; }
+        public int LayoutType { get; set; }
+    }
+
+    public class ScreeningItem
+    {
+        public Guid ScreeningId { get; set; }
+        public string MovieTitle { get; set; } = "";
+        public int HallNumber { get; set; }
+        public DateTimeOffset StartTimeUtc { get; set; }
+    }
+
+    private bool showDeleteModal;
+    private string deleteType = "";
+    private Guid deleteId;
+    private string deleteItemName = "";
+
+    private void OpenDeleteModal(string type, Guid id, string itemName)
+    {
+        deleteType = type;
+        deleteId = id;
+        deleteItemName = itemName;
+        showDeleteModal = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        HttpResponseMessage response;
+
+        if (deleteType == "film")
+            response = await Http.DeleteAsync($"/api/movies/{deleteId}");
+        else if (deleteType == "hall")
+            response = await Http.DeleteAsync($"/api/halls/{deleteId}");
+        else
+            response = await Http.DeleteAsync($"/api/screenings/{deleteId}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = await ApiErrorHelper.ReadErrorAsync(response);
+            showDeleteModal = false;
+            return;
+        }
+
+        showDeleteModal = false;
+        await LoadData();
+    }
+}
