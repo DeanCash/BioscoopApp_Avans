@@ -1,0 +1,108 @@
+﻿@page "/admin-panel/halls/edit/{Id:guid}"
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using BioscoopFrontend.Services
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject AuthService AuthService
+
+<div class="admin-page">
+    <div class="admin-card">
+        <div class="admin-header">
+            <div>
+                <h1>Edit Hall</h1>
+                <p class="admin-subtitle">Update hall information</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-error">
+                <span class="alert-icon">⚠️</span>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        <div class="admin-form">
+            <div class="admin-form-group">
+                <label>Hall number</label>
+                <input class="admin-input" type="number" @bind="model.Number" />
+            </div>
+
+            <div class="admin-form-group">
+                <label>Layout type</label>
+                <select class="admin-select" @bind="model.LayoutType">
+                    <option value="0">100 seats</option>
+                    <option value="1">150 seats</option>
+                    <option value="2">200 seats</option>
+                </select>
+            </div>
+
+            <div class="admin-actions">
+                <button class="primary-button" @onclick="Save">Save changes</button>
+                <button class="secondary-button" @onclick="Cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private HallResponse model = new();
+    private string? errorMessage;
+
+    public class HallResponse
+    {
+        public Guid HallId { get; set; }
+        public int Number { get; set; }
+        public int LayoutType { get; set; }
+    }
+
+    public class HallDto
+    {
+        public int Number { get; set; }
+        public int LayoutType { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            Nav.NavigateTo("/admin-panel/login", forceLoad: true);
+            return;
+        }
+
+        var result = await Http.GetFromJsonAsync<HallResponse>($"/api/halls/{Id}");
+        if (result is null)
+        {
+            errorMessage = "Hall not found.";
+            return;
+        }
+
+        model = result;
+    }
+
+    private async Task Save()
+    {
+        var dto = new HallDto
+        {
+            Number = model.Number,
+            LayoutType = model.LayoutType
+        };
+
+        var response = await Http.PutAsJsonAsync($"/api/halls/{Id}", dto);
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = await ApiErrorHelper.ReadErrorAsync(response);
+            return;
+        }
+
+        Nav.NavigateTo("/admin-panel/manager", forceLoad: true);
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/admin-panel/manager");
+    }
+}

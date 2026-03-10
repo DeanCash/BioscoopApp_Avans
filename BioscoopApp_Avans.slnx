@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="BackendAPI.Tests/BackendAPI.Tests.csproj" />
   <Project Path="BackendAPI/BackendAPI.csproj" Id="3a13a671-5c92-4180-9e7e-6f8a9122ad85" />
   <Project Path="BioscoopApp_Avans/BioscoopApp_Avans.csproj" />
   <Project Path="BioscoopFrontend/BioscoopFrontend.csproj" Id="2bb3cf9e-e998-44b1-99c4-95a39e19a53a" />

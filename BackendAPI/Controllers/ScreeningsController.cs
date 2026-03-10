@@ -44,6 +44,27 @@ namespace BackendAPI.Controllers
             return Ok(screenings);
         }
 
+        [HttpGet("overview")]
+        [AllowAnonymous]
+        public IActionResult GetScreeningsOverview()
+        {
+            var screenings = context.Screenings
+                .AsNoTracking()
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .OrderBy(s => s.StartTimeUtc)
+                .Select(s => new
+                {
+                    screeningId = s.ScreeningId,
+                    movieTitle = s.Movie.Title,
+                    hallNumber = s.Hall.Number,
+                    startTimeUtc = s.StartTimeUtc
+                })
+                .ToList();
+
+            return Ok(screenings);
+        }
+
         [HttpGet("{id}")]
         [AllowAnonymous]
         public IActionResult GetScreening(Guid id)
