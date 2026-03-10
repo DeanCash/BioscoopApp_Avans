@@ -132,5 +132,28 @@ namespace BackendAPI.Controllers
 
             return Ok(result);
         }
+
+        // GET api/movies/{id}/details
+        [HttpGet("{id}/details")]
+        [AllowAnonymous]
+        public async Task<ActionResult<MovieDetailsDto>> GetMovieDetails(
+            Guid id,
+            [FromQuery] int daysAhead = 30,
+            CancellationToken ct = default)
+        {
+            if (daysAhead < 1) daysAhead = 1;
+            if (daysAhead > 365) daysAhead = 365;
+
+            var result = await _movieQueryService.GetMovieDetailsAsync(
+                id,
+                DateTimeOffset.UtcNow,
+                daysAhead,
+                ct);
+
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
     }
 }
