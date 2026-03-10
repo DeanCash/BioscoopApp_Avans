@@ -1,0 +1,122 @@
+﻿@page "/admin-panel/films/edit/{Id:guid}"
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using BioscoopFrontend.Services
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject AuthService AuthService
+
+<div class="admin-page">
+    <div class="admin-card">
+        <div class="admin-header">
+            <div>
+                <h1>Edit Film</h1>
+                <p class="admin-subtitle">Update film information</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-error">
+                <span class="alert-icon">⚠️</span>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        <div class="admin-form">
+            <div class="admin-form-group">
+                <label>Title</label>
+                <input class="admin-input" @bind="model.Title" />
+            </div>
+
+            <div class="admin-form-group">
+                <label>Description</label>
+                <textarea class="admin-textarea" @bind="model.Description"></textarea>
+            </div>
+
+            <div class="admin-form-group">
+                <label>Duration in minutes</label>
+                <input class="admin-input" type="number" @bind="model.DurationMinutes" />
+            </div>
+
+            <div class="admin-form-group">
+                <label>Age</label>
+                <input class="admin-input" type="number" @bind="model.Age" />
+            </div>
+
+            <div class="admin-actions">
+                <button class="primary-button" @onclick="Save">Save changes</button>
+                <button class="secondary-button" @onclick="Cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private MovieResponse model = new();
+    private string? errorMessage;
+
+    public class MovieResponse
+    {
+        public Guid MovieId { get; set; }
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int DurationMinutes { get; set; }
+        public int Age { get; set; }
+    }
+
+    public class MovieDto
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int DurationMinutes { get; set; }
+        public int Age { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            Nav.NavigateTo("/admin-panel/login", forceLoad: true);
+            return;
+        }
+
+        var result = await Http.GetFromJsonAsync<MovieResponse>($"/api/movies/{Id}");
+        if (result is null)
+        {
+            errorMessage = "Film not found.";
+            return;
+        }
+
+        model = result;
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+
+        var dto = new MovieDto
+        {
+            Title = model.Title,
+            Description = model.Description,
+            DurationMinutes = model.DurationMinutes,
+            Age = model.Age
+        };
+
+        var response = await Http.PutAsJsonAsync($"/api/movies/{Id}", dto);
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = await ApiErrorHelper.ReadErrorAsync(response);
+            return;
+        }
+
+        Nav.NavigateTo("/admin-panel/manager", forceLoad: true);
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/admin-panel/manager");
+    }
+}
