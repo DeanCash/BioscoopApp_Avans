@@ -1,0 +1,94 @@
+﻿@page "/admin-panel/films/create"
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using BioscoopFrontend.Services
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject AuthService AuthService
+
+<div class="admin-page">
+    <div class="admin-card">
+        <div class="admin-header">
+            <div>
+                <h1>Create Film</h1>
+                <p class="admin-subtitle">Add a new film to the system</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-error">
+                <span class="alert-icon">⚠️</span>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        <div class="admin-form">
+            <div class="admin-form-group">
+                <label>Title</label>
+                <input class="admin-input" @bind="model.Title" />
+            </div>
+
+            <div class="admin-form-group">
+                <label>Description</label>
+                <textarea class="admin-textarea" @bind="model.Description"></textarea>
+            </div>
+
+            <div class="admin-form-group">
+                <label>Duration in minutes</label>
+                <input class="admin-input" type="number" @bind="model.DurationMinutes" />
+            </div>
+
+            <div class="admin-form-group">
+                <label>Age</label>
+                <input class="admin-input" type="number" @bind="model.Age" />
+            </div>
+
+            <div class="admin-actions">
+                <button class="primary-button" @onclick="Save">Save</button>
+                <button class="secondary-button" @onclick="Cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+private MovieDto model = new();
+private string? errorMessage;
+
+protected override async Task OnInitializedAsync()
+{
+    if (!await AuthService.IsAuthenticatedAsync())
+    {
+        Nav.NavigateTo("/admin-panel/login", forceLoad: true);
+        return;
+    }
+}
+
+public class MovieDto
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int DurationMinutes { get; set; }
+        public int Age { get; set; }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+
+    var response = await Http.PostAsJsonAsync("/api/movies", model);
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = await ApiErrorHelper.ReadErrorAsync(response);
+            return;
+        }
+
+        Nav.NavigateTo("/admin-panel/manager", forceLoad: true);
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/admin-panel/manager");
+    }
+}

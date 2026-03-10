@@ -16,6 +16,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:5100",
                 "https://localhost:7076")
             .AllowAnyHeader()
+            .AllowCredentials()
             .AllowAnyMethod());
 });
 
@@ -50,10 +51,27 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(o =>
     {
         o.Cookie.Name = "CinemaAuth";
-        o.LoginPath = "/admin-panel/login";     
+        o.LoginPath = "/admin-panel/login";
         o.AccessDeniedPath = "/admin-panel/denied";
         o.SlidingExpiration = true;
         o.ExpireTimeSpan = TimeSpan.FromHours(8);
+
+        o.Cookie.SameSite = SameSiteMode.None;
+        o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+
+        o.Events = new CookieAuthenticationEvents
+        {
+            OnRedirectToLogin = ctx =>
+            {
+                ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Task.CompletedTask;
+            },
+            OnRedirectToAccessDenied = ctx =>
+            {
+                ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -66,7 +84,6 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    //DbSeeder.Seed(db);
     SeedUsers(db);
 }
 

@@ -15,7 +15,7 @@ namespace BackendAPI.Services
             _db = db;
         }
 
-        public async Task<ReservationGroupResponseDto?> ReserveAsync(Guid screeningId, int numberOfSeats = 1)
+        public async Task<ReservationGroupResponseDto?> ReserveAsync(Guid screeningId, List<TicketLineDto> tickets)
         {
             var screening = await _db.Screenings
                 .Include(s => s.Movie)
@@ -24,6 +24,28 @@ namespace BackendAPI.Services
 
             if (screening == null)
                 return null;
+
+            // Look up tariff prices
+            var allTariffs = await _db.Tariffs.ToListAsync();
+            var tariffIds = tickets.Select(t => t.TariffId).Distinct().ToHashSet();
+            var tariffs = allTariffs
+                .Where(t => tariffIds.Contains(t.TariffId))
+                .ToDictionary(t => t.TariffId);
+
+            // Build a flat list: one entry per ticket with its tariff + price
+            var ticketList = new List<(Guid TariffId, decimal Price)>();
+            foreach (var line in tickets)
+            {
+                if (!tariffs.TryGetValue(line.TariffId, out var tariff))
+                    throw new InvalidOperationException("INVALID_TARIFF");
+
+                for (int i = 0; i < line.Count; i++)
+                    ticketList.Add((line.TariffId, tariff.Price));
+            }
+
+            int numberOfSeats = ticketList.Count;
+            if (numberOfSeats == 0)
+                throw new InvalidOperationException("NO_TICKETS");
 
             var allSeats = await _db.Seats
                 .Where(s => s.HallId == screening.HallId)
@@ -39,14 +61,18 @@ namespace BackendAPI.Services
                 .ToList();
 
             int totalRows = allSeats.Select(s => s.RowLabel).Distinct().Count();
-            int maxSeatNumber = allSeats.Max(s => s.SeatNumber);
             double centerRow = (totalRows - 1) / 2.0;
-            double centerSeat = (maxSeatNumber + 1) / 2.0;
+
+            // Per-row max seat number so center is correct for mixed-width halls
+            var seatsPerRow = allSeats
+                .GroupBy(s => s.RowLabel)
+                .ToDictionary(g => g.Key, g => g.Max(s => s.SeatNumber));
 
             double ScoreSeat(SeatModel s)
             {
                 int rowIndex = s.RowLabel[0] - 'A';
                 double rowScore = 10 - Math.Abs(rowIndex - centerRow) * 5;
+                double centerSeat = (seatsPerRow[s.RowLabel] + 1) / 2.0;
                 double seatScore = 10 - Math.Abs(s.SeatNumber - centerSeat) * 2.2;
                 return rowScore + seatScore;
             }
@@ -61,16 +87,19 @@ namespace BackendAPI.Services
             var printCode = Guid.NewGuid().ToString("N")[..6].ToUpper();
             var orders = new List<OrderModel>();
 
-            foreach (var seat in bestWindow)
+            for (int i = 0; i < bestWindow.Count; i++)
             {
+                var seat = bestWindow[i];
+                var ticket = ticketList[i];
                 var order = new OrderModel
                 {
                     OrderId = Guid.NewGuid(),
                     ScreeningId = screeningId,
                     SeatId = seat.SeatId,
+                    TariffId = ticket.TariffId,
                     Status = "reserved",
                     PaymentStatus = "pending",
-                    TotalAmount = 10.00m,
+                    TotalAmount = ticket.Price,
                     PrintCode = printCode,
                     CreatedAtUtc = DateTimeOffset.UtcNow,
                 };
@@ -89,7 +118,7 @@ namespace BackendAPI.Services
                 foreach (var order in orders)
                     _db.Entry(order).State = EntityState.Detached;
 
-                return await ReserveAsync(screeningId, numberOfSeats);
+                return await ReserveAsync(screeningId, tickets);
             }
 
             return new ReservationGroupResponseDto
@@ -98,7 +127,7 @@ namespace BackendAPI.Services
                 MovieTitle = screening.Movie.Title,
                 HallNumber = screening.Hall.Number,
                 Status = "reserved",
-                TotalAmount = 10.00m * numberOfSeats,
+                TotalAmount = ticketList.Sum(t => t.Price),
                 Seats = bestWindow.Select((seat, i) => new ReservationSeatDto
                 {
                     OrderId = orders[i].OrderId,

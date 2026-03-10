@@ -21,7 +21,7 @@ namespace BackendAPI.Controllers
             try
             {
                 var result = await _reservationService.ReserveAsync(
-                    request.ScreeningId, request.NumberOfSeats);
+                    request.ScreeningId, request.Tickets);
 
                 if (result == null)
                     return NotFound("Screening not found");
