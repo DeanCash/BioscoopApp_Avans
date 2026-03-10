@@ -1,0 +1,51 @@
+.header-bar h3 {
+    font-size: 1.75rem;
+}
+
+.tickets-container {
+    max-width: 600px;
+}
+
+.tariff-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0;
+}
+
+.tariff-name {
+    font-size: 1.05rem;
+}
+
+.tariff-price {
+    font-size: 0.9rem;
+}
+
+.btn-counter {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #dee2e6;
+    border-radius: 0;
+    background: #f8f9fa;
+    font-size: 1.2rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.btn-counter:hover {
+    background: #e9ecef;
+}
+
+.count-display {
+    min-width: 24px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.summary {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0;
+}

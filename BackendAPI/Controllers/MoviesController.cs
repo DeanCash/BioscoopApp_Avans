@@ -57,6 +57,8 @@ namespace BackendAPI.Controllers
                 Description = movieDto.Description,
                 DurationMinutes = movieDto.DurationMinutes,
                 Age = movieDto.Age,
+                Genre = movieDto.Genre,
+                ImageUrl = movieDto.ImageUrl,
                 CreatedAtUtc = DateTime.Now,
             };
 
@@ -88,6 +90,8 @@ namespace BackendAPI.Controllers
             movie.Description = movieDto.Description;
             movie.DurationMinutes = movieDto.DurationMinutes;
             movie.Age = movieDto.Age;
+            movie.Genre = movieDto.Genre;
+            movie.ImageUrl = movieDto.ImageUrl;
 
             context.SaveChanges();
 
