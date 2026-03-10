@@ -1,0 +1,89 @@
+@page "/MovieInfo/{MovieId:guid}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="header-barcan d-flex justify-content-between align-items-center p-3 border-2">
+    <h3 class="text-uppercase mb-0 fw-bold">Film information</h3>
+    <button class="btn btn-outline-secondary" @onclick="GoBack">
+        <span>&larr;</span>
+    </button>
+</div>
+
+@if (errorMessage != null)
+{
+    <p class="text-danger mt-3">@errorMessage</p>
+}
+else if (movie == null)
+{
+    <p class="mt-3"><em>Film laden...</em></p>
+}
+else
+{
+    <div class="content-card d-flex border border-2 mt-3">
+        @if (!string.IsNullOrEmpty(movie.ImageUrl))
+        {
+            <div class="image-container">
+                <img src="@movie.ImageUrl" alt="@movie.Title" class="movie-poster" />
+            </div>
+        }
+        else
+        {
+            <div class="image-placeholder d-flex align-items-center justify-content-center">
+                <span class="film-icon">&#127902;</span>
+            </div>
+        }
+
+        <div class="info-section p-4 flex-grow-1">
+            <h4 class="fw-bold mb-3">@movie.Title</h4>
+            <hr />
+
+            <div class="info-field border border-2 p-3 mb-3">
+                <small class="text-muted">Genre</small>
+                <p class="mb-0 fw-semibold">@movie.Genre</p>
+            </div>
+
+            <div class="info-field border border-2 p-3 mb-3">
+                <small class="text-muted">Duration</small>
+                <p class="mb-0 fw-semibold">@movie.DurationMinutes minutes</p>
+            </div>
+
+            <div class="info-field border border-2 p-3 mb-3">
+                <small class="text-muted">Age Rating</small>
+                <p class="mb-0 fw-semibold">@movie.Age+</p>
+            </div>
+
+            <div class="info-field border border-2 p-3 mb-3">
+                <small class="text-muted">Description</small>
+                <p class="mb-0">@movie.Description</p>
+            </div>
+        </div>
+    </div>
+    <a href="/Showing/@MovieId" class="choose-showing-btn d-block text-center p-3 mt-3">
+        Choose showing &rarr;
+    </a>
+}
+
+@code {
+    [Parameter]
+    public Guid MovieId { get; set; }
+
+    private MovieDetailDto? movie;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            movie = await Http.GetFromJsonAsync<MovieDetailDto>($"api/movies/{MovieId}");
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Film kon niet worden geladen.";
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/films");
+    }
+}

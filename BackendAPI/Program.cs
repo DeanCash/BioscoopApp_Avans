@@ -18,7 +18,6 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowCredentials()
             .AllowAnyMethod());
-
 });
 
 builder.Services.AddScoped<IMovieQueryService, MovieQueryService>();
