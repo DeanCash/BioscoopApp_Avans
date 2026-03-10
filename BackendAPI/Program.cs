@@ -29,13 +29,21 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    // If on "MacOS"
-    if (OperatingSystem.IsMacOS())
+    // Check for USE_SQLITE environment variable or fallback to SQLite for easy local testing
+    var useSqlite = builder.Configuration.GetValue<bool>("UseSqlite") ||
+                    Environment.GetEnvironmentVariable("USE_SQLITE") == "true";
+
+    if (useSqlite)
+    {
+        // SQLite for local development without external database
+        var dbPath = Path.Combine(Directory.GetCurrentDirectory(), "cinema.db");
+        options.UseSqlite($"Data Source={dbPath}");
+    }
+    else if (OperatingSystem.IsMacOS())
     {
         var connectionString = builder.Configuration.GetConnectionString("MySqlConnection");
         options.UseMySQL(connectionString);
     }
-    // If on "Windows"
     else
     {
         options.UseSqlServer("name=DefaultConnection", (s) =>
@@ -66,7 +74,9 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    //DbSeeder.Seed(db);
+    // Ensure database is created (for SQLite development)
+    db.Database.EnsureCreated();
+    DbSeeder.Seed(db);
     SeedUsers(db);
 }
 
@@ -76,7 +86,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+// Skip HTTPS redirect in development for easier testing
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors("Frontend");
 
 app.UseAuthentication();

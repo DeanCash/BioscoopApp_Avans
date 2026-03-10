@@ -12,6 +12,7 @@ namespace BackendAPI.Models.Movie
         public string Description { get; set; } = null!;
         public int DurationMinutes { get; set; }
         public int Age { get; set; }
+        public string? ImageUrl { get; set; }
         public DateTimeOffset CreatedAtUtc { get; set; }
 
         // Navigation
