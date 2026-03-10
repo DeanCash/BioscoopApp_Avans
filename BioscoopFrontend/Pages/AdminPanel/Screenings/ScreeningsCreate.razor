@@ -1,0 +1,139 @@
+﻿@page "/admin-panel/showings/create"
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using BioscoopFrontend.Services
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject AuthService AuthService
+
+<div class="admin-page">
+    <div class="admin-card">
+        <div class="admin-header">
+            <div>
+                <h1>Create Showing</h1>
+                <p class="admin-subtitle">Add a new showing</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-error">
+                <span class="alert-icon">⚠️</span>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        <div class="admin-form">
+            <div class="admin-form-group">
+                <label>Film</label>
+                <select class="admin-select" @bind="model.MovieId">
+                    <option value="@Guid.Empty">Select a film</option>
+                    @foreach (var movie in movies)
+                    {
+                        <option value="@movie.MovieId">@movie.Title</option>
+                    }
+                </select>
+            </div>
+
+            <div class="admin-form-group">
+                <label>Hall</label>
+                <select class="admin-select" @bind="model.HallId">
+                    <option value="@Guid.Empty">Select a hall</option>
+                    @foreach (var hall in halls)
+                    {
+                        <option value="@hall.HallId">Hall @hall.Number</option>
+                    }
+                </select>
+            </div>
+
+            <div class="admin-form-group">
+                <label>Start time</label>
+                <InputDate @bind-Value="startTimeLocal" Type="InputDateType.DateTimeLocal" class="admin-input" />
+            </div>
+
+            <div class="admin-actions">
+                <button class="primary-button" @onclick="Save">Save</button>
+                <button class="secondary-button" @onclick="Cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ScreeningDto model = new();
+    private string? errorMessage;
+    private DateTime? startTimeLocal;
+
+    private List<MovieItem> movies = new();
+    private List<HallItem> halls = new();
+
+    public class ScreeningDto
+    {
+        public Guid MovieId { get; set; }
+        public Guid HallId { get; set; }
+        public DateTimeOffset StartTimeUtc { get; set; }
+    }
+
+    public class MovieItem
+    {
+        public Guid MovieId { get; set; }
+        public string Title { get; set; } = "";
+    }
+
+    public class HallItem
+    {
+        public Guid HallId { get; set; }
+        public int Number { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            Nav.NavigateTo("/admin-panel/login", forceLoad: true);
+            return;
+        }
+
+        movies = await Http.GetFromJsonAsync<List<MovieItem>>("/api/movies") ?? new();
+        halls = await Http.GetFromJsonAsync<List<HallItem>>("/api/halls") ?? new();
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+
+        if (model.MovieId == Guid.Empty)
+        {
+            errorMessage = "Please select a film.";
+            return;
+        }
+
+        if (model.HallId == Guid.Empty)
+        {
+            errorMessage = "Please select a hall.";
+            return;
+        }
+
+        if (startTimeLocal is null)
+        {
+            errorMessage = "Please select a valid date and time.";
+            return;
+        }
+
+        model.StartTimeUtc = new DateTimeOffset(startTimeLocal.Value.ToUniversalTime());
+
+        var response = await Http.PostAsJsonAsync("/api/screenings", model);
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = await ApiErrorHelper.ReadErrorAsync(response);
+            return;
+        }
+
+        Nav.NavigateTo("/admin-panel/manager", forceLoad: true);
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/admin-panel/manager");
+    }
+}

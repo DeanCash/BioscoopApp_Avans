@@ -15,6 +15,9 @@ namespace BackendAPI.Models.Movie
         public int DurationMinutes { get; set; }
         [Required(ErrorMessage = "Age is required.")]
         public int Age { get; set; }
+        [Required(ErrorMessage = "Genre is required.")]
+        public string Genre { get; set; } = null!;
+        public string? ImageUrl { get; set; }
         public DateTimeOffset CreatedAtUtc { get; set; }
 
         // Navigation

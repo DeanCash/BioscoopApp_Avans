@@ -109,6 +109,10 @@
         <p class="mt-3 text-muted">Films laden...</p>
     </div>
 }
+else if (loadError != null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
 else if (movies.Count == 0)
 {
     <div class="alert alert-info text-center">
@@ -307,10 +311,19 @@ else
     private bool isProcessing;
     private string? paymentError;
     private string? printCode;
+    private string? loadError;
 
     protected override async Task OnInitializedAsync()
     {
-        movies = await Http.GetFromJsonAsync<List<UpcomingMovieDto>>("api/movies/upcoming");
+        try
+        {
+            movies = await Http.GetFromJsonAsync<List<UpcomingMovieDto>>("api/movies/upcoming");
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Kon films niet ophalen: {ex.Message}";
+            movies = [];
+        }
     }
 
     private void SelectScreening(UpcomingMovieDto movie, UpcomingScreeningDto screening)

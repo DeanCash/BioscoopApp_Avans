@@ -16,6 +16,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:5100",
                 "https://localhost:7076")
             .AllowAnyHeader()
+            .AllowCredentials()
             .AllowAnyMethod());
 });
 
@@ -29,21 +30,13 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    // Check for USE_SQLITE environment variable or fallback to SQLite for easy local testing
-    var useSqlite = builder.Configuration.GetValue<bool>("UseSqlite") ||
-                    Environment.GetEnvironmentVariable("USE_SQLITE") == "true";
-
-    if (useSqlite)
-    {
-        // SQLite for local development without external database
-        var dbPath = Path.Combine(Directory.GetCurrentDirectory(), "cinema.db");
-        options.UseSqlite($"Data Source={dbPath}");
-    }
-    else if (OperatingSystem.IsMacOS())
+    // If on "MacOS"
+    if (OperatingSystem.IsMacOS())
     {
         var connectionString = builder.Configuration.GetConnectionString("MySqlConnection");
         options.UseMySQL(connectionString);
     }
+    // If on "Windows"
     else
     {
         options.UseSqlServer("name=DefaultConnection", (s) =>
@@ -58,10 +51,27 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(o =>
     {
         o.Cookie.Name = "CinemaAuth";
-        o.LoginPath = "/admin-panel/login";     
+        o.LoginPath = "/admin-panel/login";
         o.AccessDeniedPath = "/admin-panel/denied";
         o.SlidingExpiration = true;
         o.ExpireTimeSpan = TimeSpan.FromHours(8);
+
+        o.Cookie.SameSite = SameSiteMode.None;
+        o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+
+        o.Events = new CookieAuthenticationEvents
+        {
+            OnRedirectToLogin = ctx =>
+            {
+                ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Task.CompletedTask;
+            },
+            OnRedirectToAccessDenied = ctx =>
+            {
+                ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -74,9 +84,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    // Ensure database is created (for SQLite development)
-    db.Database.EnsureCreated();
-    DbSeeder.Seed(db);
+    //DbSeeder.Seed(db);
     SeedUsers(db);
 }
 
@@ -86,11 +94,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Skip HTTPS redirect in development for easier testing
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+app.UseHttpsRedirection();
 app.UseCors("Frontend");
 
 app.UseAuthentication();

@@ -9,5 +9,6 @@ namespace BackendAPI.Models.Tariff
         public string TariffType { get; set; } = null!;   // unique
         public string DisplayName { get; set; } = null!;
         public int SortOrder { get; set; }
+        public decimal Price { get; set; }
     }
 }
