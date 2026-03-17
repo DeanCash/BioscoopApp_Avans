@@ -1,0 +1,68 @@
+.content-card {
+    min-height: 400px;
+}
+
+.image-placeholder {
+    width: 50%;
+    min-height: 380px;
+    background-color: #d9dde3;
+    margin: 1rem;
+    border-radius: 4px;
+}
+
+.image-container {
+    width: 50%;
+    min-height: 380px;
+    margin: 1rem;
+}
+
+.movie-poster {
+    width: 100%;
+    height: 100%;
+    max-height: 600px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.film-icon {
+    font-size: 4rem;
+    opacity: 0.4;
+}
+
+.info-section {
+    width: 50%;
+}
+
+.info-field {
+    border-radius: 4px;
+    font-size: 1.15rem;
+}
+
+.header-bar h3 {
+    font-size: 1.75rem;
+}
+
+.info-section h4 {
+    font-size: 1.5rem;
+}
+
+.info-field small {
+    font-size: 1rem;
+}
+
+.info-field p {
+    font-size: 1.2rem;
+}
+
+.choose-showing-btn {
+    background-color: #4cd964;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.choose-showing-btn:hover {
+    background-color: #3dbf55;
+    color: white;
+}
