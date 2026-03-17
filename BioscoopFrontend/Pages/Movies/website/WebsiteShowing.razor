@@ -1,4 +1,4 @@
-@page "/kiosk/Showing/{MovieId:guid}"
+@page "/website/Showing/{MovieId:guid}"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
@@ -78,8 +78,15 @@ else
             await Task.WhenAll(movieTask, screeningsTask, seatsTask);
 
             movieTitle = movieTask.Result?.Title;
-            screenings = screeningsTask.Result ?? new();
+            var allScreenings = screeningsTask.Result ?? new();
             availableSeats = seatsTask.Result ?? new();
+
+            // Only show screenings within the next 7 days
+            var now = DateTimeOffset.Now;
+            var oneWeekFromNow = now.AddDays(7);
+            screenings = allScreenings
+                .Where(s => s.StartTimeUtc >= now && s.StartTimeUtc <= oneWeekFromNow)
+                .ToList();
         }
         catch (HttpRequestException)
         {
@@ -102,12 +109,11 @@ else
 
     private void SelectShowing(Guid screeningId)
     {
-        // Navigate to next step (e.g., seat selection)
-        Navigation.NavigateTo($"/kiosk/SelectTickets/{screeningId}");
+        Navigation.NavigateTo($"/SelectTickets/{screeningId}");
     }
 
     private void GoBack()
     {
-        Navigation.NavigateTo($"/kiosk/MovieInfo/{MovieId}");
+        Navigation.NavigateTo($"/website/MovieInfo/{MovieId}");
     }
 }
