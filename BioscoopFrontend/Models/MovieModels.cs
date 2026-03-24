@@ -101,6 +101,7 @@ public class ReservationGroupResponseDto
     public string PrintCode { get; set; } = "";
     public string MovieTitle { get; set; } = "";
     public int HallNumber { get; set; }
+    public DateTimeOffset StartTimeUtc { get; set; }
     public string Status { get; set; } = "";
     public decimal TotalAmount { get; set; }
     public List<ReservationSeatDto> Seats { get; set; } = new();

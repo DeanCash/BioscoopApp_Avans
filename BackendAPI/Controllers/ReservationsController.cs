@@ -1,6 +1,8 @@
+using API.Services;
 using BackendAPI.Models.Reservation;
 using BackendAPI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BackendAPI.Controllers
 {
@@ -9,10 +11,12 @@ namespace BackendAPI.Controllers
     public class ReservationsController : ControllerBase
     {
         private readonly ReservationService _reservationService;
+        private readonly ApplicationDbContext _db;
 
-        public ReservationsController(ReservationService reservationService)
+        public ReservationsController(ReservationService reservationService, ApplicationDbContext db)
         {
             _reservationService = reservationService;
+            _db = db;
         }
 
         [HttpPost]
@@ -36,6 +40,43 @@ namespace BackendAPI.Controllers
             {
                 return Conflict("Not enough adjacent seats available for this screening");
             }
+        }
+
+        // GET api/reservations/by-code/{code}
+        [HttpGet("by-code/{code}")]
+        public async Task<IActionResult> GetByPrintCode(string code, CancellationToken ct = default)
+        {
+            var orders = await _db.Orders
+                .Include(o => o.Screening)
+                    .ThenInclude(s => s.Movie)
+                .Include(o => o.Screening)
+                    .ThenInclude(s => s.Hall)
+                .Include(o => o.Seat)
+                .Where(o => o.PrintCode == code.ToUpper())
+                .ToListAsync(ct);
+
+            if (orders.Count == 0)
+                return NotFound("Code niet gevonden.");
+
+            var first = orders[0];
+
+            var result = new ReservationGroupResponseDto
+            {
+                PrintCode    = first.PrintCode,
+                MovieTitle   = first.Screening.Movie.Title,
+                HallNumber   = first.Screening.Hall.Number,
+                StartTimeUtc = first.Screening.StartTimeUtc,
+                Status       = first.Status,
+                TotalAmount  = orders.Sum(o => o.TotalAmount),
+                Seats        = orders.Select(o => new ReservationSeatDto
+                {
+                    OrderId    = o.OrderId,
+                    RowLabel   = o.Seat?.RowLabel ?? "-",
+                    SeatNumber = o.Seat?.SeatNumber ?? 0,
+                }).ToList()
+            };
+
+            return Ok(result);
         }
     }
 }
