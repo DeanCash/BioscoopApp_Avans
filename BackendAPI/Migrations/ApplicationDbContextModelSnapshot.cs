@@ -58,6 +58,13 @@ namespace BackendAPI.Migrations
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
 
+                    b.Property<string>("Genre")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -104,12 +111,17 @@ namespace BackendAPI.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<Guid?>("TariffId")
+                        .HasColumnType("char(36)");
+
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("OrderId");
 
                     b.HasIndex("SeatId");
+
+                    b.HasIndex("TariffId");
 
                     b.HasIndex("ScreeningId", "SeatId")
                         .IsUnique();
@@ -177,6 +189,9 @@ namespace BackendAPI.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
@@ -223,9 +238,15 @@ namespace BackendAPI.Migrations
                         .HasForeignKey("SeatId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("BackendAPI.Models.Tariff.TariffModel", "Tariff")
+                        .WithMany()
+                        .HasForeignKey("TariffId");
+
                     b.Navigation("Screening");
 
                     b.Navigation("Seat");
+
+                    b.Navigation("Tariff");
                 });
 
             modelBuilder.Entity("BackendAPI.Models.Screening.ScreeningModel", b =>

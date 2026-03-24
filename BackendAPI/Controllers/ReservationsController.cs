@@ -1,6 +1,8 @@
+using API.Services;
 using BackendAPI.Models.Reservation;
 using BackendAPI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BackendAPI.Controllers
 {
@@ -9,10 +11,12 @@ namespace BackendAPI.Controllers
     public class ReservationsController : ControllerBase
     {
         private readonly ReservationService _reservationService;
+        private readonly ApplicationDbContext _db;
 
-        public ReservationsController(ReservationService reservationService)
+        public ReservationsController(ReservationService reservationService, ApplicationDbContext db)
         {
             _reservationService = reservationService;
+            _db = db;
         }
 
         [HttpPost]
@@ -38,31 +42,69 @@ namespace BackendAPI.Controllers
             }
         }
 
-        [HttpPost("website")]
-        public async Task<IActionResult> ReserveWebsite(WebsiteReservationRequestDto request)
+        // GET api/reservations/by-code/{code}
+        [HttpGet("by-code/{code}")]
+        public async Task<IActionResult> GetByPrintCode(string code, CancellationToken ct = default)
         {
-            try
-            {
-                var result = await _reservationService.ReserveSpecificSeatsAsync(
-                    request.ScreeningId, request.SeatTickets);
+            var orders = await _db.Orders
+                .Include(o => o.Screening)
+                    .ThenInclude(s => s.Movie)
+                .Include(o => o.Screening)
+                    .ThenInclude(s => s.Hall)
+                .Include(o => o.Seat)
+                .Where(o => o.PrintCode == code.ToUpper())
+                .ToListAsync(ct);
 
-                if (result == null)
-                    return NotFound("Screening not found");
+            if (orders.Count == 0)
+                return NotFound("Code niet gevonden.");
 
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex) when (ex.Message == "SEATS_TAKEN")
+            var first = orders[0];
+
+            var result = new ReservationGroupResponseDto
             {
-                return Conflict("One or more selected seats are already taken");
-            }
-            catch (InvalidOperationException ex) when (ex.Message == "INVALID_SEATS")
-            {
-                return BadRequest("One or more seats do not belong to this hall");
-            }
-            catch (InvalidOperationException ex) when (ex.Message == "INVALID_TARIFF")
-            {
-                return BadRequest("Invalid tariff selected");
-            }
+                PrintCode    = first.PrintCode,
+                MovieTitle   = first.Screening.Movie.Title,
+                HallNumber   = first.Screening.Hall.Number,
+                StartTimeUtc = first.Screening.StartTimeUtc,
+                Status       = first.Status,
+                TotalAmount  = orders.Sum(o => o.TotalAmount),
+                Seats        = orders.Select(o => new ReservationSeatDto
+                {
+                    OrderId    = o.OrderId,
+                    RowLabel   = o.Seat?.RowLabel ?? "-",
+                    SeatNumber = o.Seat?.SeatNumber ?? 0,
+                }).ToList()
+            };
+
+            return Ok(result);
+        }
+    }
+    
+    
+    [HttpPost("website")]
+    public async Task<IActionResult> ReserveWebsite(WebsiteReservationRequestDto request)
+    {
+        try
+        {
+            var result = await _reservationService.ReserveSpecificSeatsAsync(
+                request.ScreeningId, request.SeatTickets);
+
+            if (result == null)
+                return NotFound("Screening not found");
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "SEATS_TAKEN")
+        {
+            return Conflict("One or more selected seats are already taken");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "INVALID_SEATS")
+        {
+            return BadRequest("One or more seats do not belong to this hall");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "INVALID_TARIFF")
+        {
+            return BadRequest("Invalid tariff selected");
         }
     }
 }
