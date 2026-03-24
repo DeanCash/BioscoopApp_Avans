@@ -1,0 +1,25 @@
+.header-bar h3 {
+    font-size: 1.75rem;
+}
+
+.tickets-container {
+    max-width: 600px;
+}
+
+.tariff-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0;
+}
+
+.tariff-select {
+    width: 220px;
+    border-radius: 0;
+    font-size: 0.9rem;
+}
+
+.summary {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0;
+}

@@ -112,3 +112,11 @@ public class ReservationSeatDto
     public string RowLabel { get; set; } = "";
     public int SeatNumber { get; set; }
 }
+
+public class SeatAvailabilityDto
+{
+    public Guid SeatId { get; set; }
+    public string RowLabel { get; set; } = "";
+    public int SeatNumber { get; set; }
+    public bool IsReserved { get; set; }
+}
