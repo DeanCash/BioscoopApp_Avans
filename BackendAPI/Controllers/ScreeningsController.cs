@@ -113,6 +113,40 @@ namespace BackendAPI.Controllers
         }
 
 
+        [HttpGet("{id}/seats")]
+        [AllowAnonymous]
+        public IActionResult GetSeatsForScreening(Guid id)
+        {
+            var screening = context.Screenings
+                .AsNoTracking()
+                .FirstOrDefault(s => s.ScreeningId == id);
+
+            if (screening == null) return NotFound();
+
+            var seats = context.Seats
+                .AsNoTracking()
+                .Where(s => s.HallId == screening.HallId)
+                .OrderBy(s => s.RowLabel)
+                .ThenBy(s => s.SeatNumber)
+                .ToList();
+
+            var reservedSeatIds = context.Orders
+                .AsNoTracking()
+                .Where(o => o.ScreeningId == id && o.SeatId != null)
+                .Select(o => o.SeatId)
+                .ToHashSet();
+
+            var result = seats.Select(s => new
+            {
+                s.SeatId,
+                s.RowLabel,
+                s.SeatNumber,
+                IsReserved = reservedSeatIds.Contains(s.SeatId)
+            });
+
+            return Ok(result);
+        }
+
         [HttpPost]
         [Authorize(Roles = "Manager")]
         public IActionResult CreateScreening(ScreeningDto dto)

@@ -1,0 +1,28 @@
+.header-bar h3 {
+    font-size: 1.75rem;
+}
+
+.showings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.showing-card {
+    border-radius: 0;
+    cursor: pointer;
+}
+
+.showing-date {
+    font-size: 0.95rem;
+}
+
+.showing-time {
+    font-size: 1.3rem;
+}
+
+.seats-info {
+    border-radius: 0;
+    font-size: 0.9rem;
+    color: #555;
+}
