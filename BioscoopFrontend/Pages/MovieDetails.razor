@@ -57,7 +57,7 @@
     }
 
     .movie-poster-detail:hover {
-        transform: scale(1.02);
+        box-shadow: 0 24px 70px rgba(0,0,0,0.6);
     }
 
     .movie-poster-placeholder {
@@ -96,7 +96,6 @@
     .btn-back:hover {
         background: rgba(255,255,255,0.2);
         color: white;
-        transform: translateX(-5px);
     }
 
     .movie-title {
@@ -182,7 +181,6 @@
 
     .screening-card:hover {
         background: rgba(255,255,255,0.1);
-        transform: translateY(-3px);
         box-shadow: 0 10px 40px rgba(0,0,0,0.3);
     }
 
@@ -256,7 +254,6 @@
     }
 
     .btn-book:hover {
-        transform: scale(1.05);
         box-shadow: 0 8px 25px rgba(238, 90, 36, 0.5);
         color: white;
     }
@@ -673,7 +670,7 @@ else
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/films");
+        Navigation.NavigateTo("/kiosk/home");
     }
 
     private void SelectScreening(ScreeningWithHallDto screening)

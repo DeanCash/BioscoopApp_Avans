@@ -2,65 +2,209 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
-<div class="header-barcan d-flex justify-content-between align-items-center p-3 border-2">
-    <h3 class="text-uppercase mb-0 fw-bold">Film information</h3>
-    <button class="btn btn-outline-secondary" @onclick="GoBack">
-        <span>&larr;</span>
+<PageTitle>@(movie?.Title ?? "Film Info")</PageTitle>
+
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        padding: 30px 0 40px 0;
+        margin: -1rem -1rem 2rem -1rem;
+        text-align: center;
+    }
+    .page-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .page-header p {
+        opacity: 0.8;
+        font-size: 1rem;
+    }
+    .btn-back {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-back:hover {
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+    .movie-detail-card {
+        display: flex;
+        gap: 0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        background: white;
+    }
+    .image-container {
+        width: 50%;
+        flex-shrink: 0;
+    }
+    .movie-poster {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .image-placeholder {
+        width: 100%;
+        height: 100%;
+        min-height: 400px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .film-icon {
+        font-size: 4rem;
+        opacity: 0.8;
+    }
+    .info-section {
+        width: 50%;
+        padding: 30px;
+        overflow-y: auto;
+    }
+    .info-section h4 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 20px;
+    }
+    .info-field {
+        background: #f8f9fa;
+        border: none !important;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+    }
+    .info-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #667eea;
+        margin-bottom: 4px;
+    }
+    .info-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1a1a2e;
+        margin: 0;
+    }
+    .info-value.description {
+        font-weight: 400;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+    .btn-choose {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 16px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        width: 100%;
+        margin-top: 24px;
+        transition: box-shadow 0.2s;
+        display: block;
+        text-align: center;
+        text-decoration: none;
+    }
+    .btn-choose:hover {
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    @@media (max-width: 768px) {
+        .movie-detail-card {
+            flex-direction: column;
+        }
+        .image-container, .info-section {
+            width: 100%;
+        }
+        .image-placeholder {
+            min-height: 300px;
+        }
+    }
+</style>
+
+<div class="page-header">
+    <button class="btn btn-back mb-3" @onclick="GoBack">
+        <span>&larr;</span> Terug
     </button>
+    <h1>Film Informatie</h1>
+    <p>Bekijk de details van deze film</p>
 </div>
 
 @if (errorMessage != null)
 {
-    <p class="text-danger mt-3">@errorMessage</p>
+    <div class="alert alert-danger mx-3">@errorMessage</div>
 }
 else if (movie == null)
 {
-    <p class="mt-3"><em>Film laden...</em></p>
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Laden...</span>
+        </div>
+        <p class="mt-3 text-muted">Film laden...</p>
+    </div>
 }
 else
 {
-    <div class="content-card d-flex border border-2 mt-3">
-        @if (!string.IsNullOrEmpty(movie.ImageUrl))
-        {
+    <div class="container">
+        <div class="movie-detail-card">
             <div class="image-container">
-                <img src="@movie.ImageUrl" alt="@movie.Title" class="movie-poster" />
-            </div>
-        }
-        else
-        {
-            <div class="image-placeholder d-flex align-items-center justify-content-center">
-                <span class="film-icon">&#127902;</span>
-            </div>
-        }
-
-        <div class="info-section p-4 flex-grow-1">
-            <h4 class="fw-bold mb-3">@movie.Title</h4>
-            <hr />
-
-            <div class="info-field border border-2 p-3 mb-3">
-                <small class="text-muted">Genre</small>
-                <p class="mb-0 fw-semibold">@movie.Genre</p>
+                @if (!string.IsNullOrEmpty(movie.ImageUrl))
+                {
+                    <img src="@movie.ImageUrl" alt="@movie.Title" class="movie-poster" />
+                }
+                else
+                {
+                    <div class="image-placeholder">
+                        <span class="film-icon">&#127902;</span>
+                    </div>
+                }
             </div>
 
-            <div class="info-field border border-2 p-3 mb-3">
-                <small class="text-muted">Duration</small>
-                <p class="mb-0 fw-semibold">@movie.DurationMinutes minutes</p>
-            </div>
+            <div class="info-section">
+                <h4>@movie.Title</h4>
 
-            <div class="info-field border border-2 p-3 mb-3">
-                <small class="text-muted">Age Rating</small>
-                <p class="mb-0 fw-semibold">@movie.Age+</p>
-            </div>
+                <div class="info-field">
+                    <span class="info-label">Genre</span>
+                    <p class="info-value">@movie.Genre</p>
+                </div>
 
-            <div class="info-field border border-2 p-3 mb-3">
-                <small class="text-muted">Description</small>
-                <p class="mb-0">@movie.Description</p>
+                <div class="info-field">
+                    <span class="info-label">Duur</span>
+                    <p class="info-value">@movie.DurationMinutes minuten</p>
+                </div>
+
+                <div class="info-field">
+                    <span class="info-label">Leeftijd</span>
+                    <p class="info-value">@movie.Age+</p>
+                </div>
+
+                <div class="info-field">
+                    <span class="info-label">Beschrijving</span>
+                    <p class="info-value description">@movie.Description</p>
+                </div>
             </div>
         </div>
+
+        <a href="/kiosk/Showing/@MovieId" class="btn-choose">
+            Kies een voorstelling &rarr;
+        </a>
     </div>
-    <a href="/kiosk/Showing/@MovieId" class="choose-showing-btn d-block text-center p-3 mt-3">
-        Choose showing &rarr;
-    </a>
 }
 
 @code {
@@ -84,6 +228,6 @@ else
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/films");
+        Navigation.NavigateTo("/kiosk/home");
     }
 }

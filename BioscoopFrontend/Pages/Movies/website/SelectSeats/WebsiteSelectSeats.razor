@@ -2,37 +2,194 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
-<div class="header-bar d-flex justify-content-between align-items-center p-3 border-2">
-    <div>
-        <h3 class="text-uppercase mb-0 fw-bold">Select Seats</h3>
-        @if (screening?.Movie != null)
-        {
-            <small class="text-muted">@screening.Movie.Title</small>
-        }
-    </div>
-    <button class="btn btn-outline-secondary" @onclick="GoBack">
-        <span>&larr;</span>
+<PageTitle>Stoelen Kiezen</PageTitle>
+
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        padding: 30px 0 40px 0;
+        margin: -1rem -1rem 2rem -1rem;
+        text-align: center;
+    }
+    .page-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .page-header p {
+        opacity: 0.8;
+        font-size: 1rem;
+    }
+    .btn-back {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-back:hover {
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+    .seats-wrapper {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        padding: 30px;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .screen-indicator {
+        text-align: center;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #888;
+        padding: 10px 0 20px 0;
+        margin-bottom: 20px;
+        border-bottom: 3px solid linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .seat-map {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+    .seat-row {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+    .row-label {
+        width: 30px;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #888;
+        font-weight: 600;
+    }
+    .seat {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+        background: #f8f9fa;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #666;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .seat.available:hover {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+    }
+    .seat.selected {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: transparent;
+        color: white;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    }
+    .seat.reserved {
+        background: #e9ecef;
+        border-color: #e9ecef;
+        color: #ccc;
+        cursor: not-allowed;
+    }
+    .legend {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    .legend-box {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: inline-block;
+    }
+    .legend-box.available {
+        background: #f8f9fa;
+        border: 2px solid #ddd;
+    }
+    .legend-box.selected {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .legend-box.reserved {
+        background: #e9ecef;
+    }
+    .summary-box {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 18px 22px;
+        margin-top: 24px;
+    }
+    .btn-continue {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 16px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        width: 100%;
+        margin-top: 16px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-continue:hover:not(:disabled) {
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    .btn-continue:disabled {
+        opacity: 0.5;
+    }
+</style>
+
+<div class="page-header">
+    <button class="btn btn-back mb-3" @onclick="GoBack">
+        <span>&larr;</span> Terug
     </button>
+    <h1>Kies je Stoelen</h1>
+    @if (screening?.Movie != null)
+    {
+        <p>@screening.Movie.Title</p>
+    }
 </div>
 
 @if (errorMessage != null)
 {
-    <p class="text-danger mt-3 px-3">@errorMessage</p>
+    <div class="alert alert-danger mx-3">@errorMessage</div>
 }
 else if (seats == null)
 {
-    <p class="mt-3 px-3"><em>Stoelen laden...</em></p>
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Laden...</span>
+        </div>
+        <p class="mt-3 text-muted">Stoelen laden...</p>
+    </div>
 }
 else
 {
-    <div class="seats-container mt-3 px-3">
+    <div class="seats-wrapper">
         <div class="screen-indicator">SCHERM</div>
 
         <div class="seat-map">
             @foreach (var row in seatsByRow)
             {
                 <div class="seat-row">
-                    <span class="row-label fw-bold">@row.Key</span>
+                    <span class="row-label">@row.Key</span>
                     @foreach (var seat in row.Value)
                     {
                         <button class="seat @GetSeatClass(seat)"
@@ -45,23 +202,23 @@ else
             }
         </div>
 
-        <div class="legend d-flex gap-3 mt-3 justify-content-center">
-            <div class="d-flex align-items-center gap-1"><span class="legend-box available"></span> Beschikbaar</div>
-            <div class="d-flex align-items-center gap-1"><span class="legend-box selected"></span> Geselecteerd</div>
-            <div class="d-flex align-items-center gap-1"><span class="legend-box reserved"></span> Bezet</div>
+        <div class="legend d-flex gap-4 justify-content-center">
+            <div class="d-flex align-items-center gap-2"><span class="legend-box available"></span> <span class="text-muted">Beschikbaar</span></div>
+            <div class="d-flex align-items-center gap-2"><span class="legend-box selected"></span> <span class="text-muted">Geselecteerd</span></div>
+            <div class="d-flex align-items-center gap-2"><span class="legend-box reserved"></span> <span class="text-muted">Bezet</span></div>
         </div>
 
-        <div class="summary mt-4 p-3">
+        <div class="summary-box">
             <div class="d-flex justify-content-between">
-                <span>Geselecteerde stoelen</span>
+                <span class="text-muted">Geselecteerde stoelen</span>
                 <span class="fw-bold">@selectedSeatIds.Count</span>
             </div>
         </div>
 
-        <button class="btn btn-dark w-100 mt-3 py-2 fw-bold"
+        <button class="btn btn-continue"
                 disabled="@(selectedSeatIds.Count == 0)"
                 @onclick="Continue">
-            Doorgaan
+            Doorgaan &rarr;
         </button>
     </div>
 }

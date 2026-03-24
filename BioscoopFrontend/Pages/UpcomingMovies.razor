@@ -1,4 +1,4 @@
-@page "/films"
+@page "/kiosk/home"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
@@ -13,7 +13,6 @@
         cursor: pointer;
     }
     .movie-card:hover {
-        transform: translateY(-5px);
         box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
     }
     .movie-poster {
@@ -61,13 +60,17 @@
         transition: transform 0.2s, box-shadow 0.2s;
     }
     .btn-details:hover {
-        transform: scale(1.05);
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         color: white;
     }
 </style>
 
 <div class="page-header">
+    <div class="d-flex justify-content-end px-4 pt-2">
+        <button class="btn btn-outline-light" @onclick='() => Navigation.NavigateTo("/print-code")'>
+            Tickets ophalen
+        </button>
+    </div>
     <h1>Eerstkomende Films</h1>
     <p>Kies een film en boek je tickets</p>
 </div>
