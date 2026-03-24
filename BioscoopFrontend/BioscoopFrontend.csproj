@@ -16,4 +16,8 @@
     <Folder Include="Pages\Website\" />
   </ItemGroup>
 
+    <ItemGroup>
+        <Folder Include="Pages\Movies\website\SelectTickets\" />
+    </ItemGroup>
+
 </Project>

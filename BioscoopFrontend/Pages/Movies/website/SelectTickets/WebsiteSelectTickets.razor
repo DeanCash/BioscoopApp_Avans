@@ -1,4 +1,4 @@
-@page "/kiosk/SelectTickets/{ScreeningId:guid}"
+@page "/website/SelectTickets/{ScreeningId:guid}"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
@@ -65,24 +65,28 @@
 {
     <p class="text-danger mt-3 px-3">@errorMessage</p>
 }
-else if (tariffs == null)
+else if (tariffs == null || seatInfos == null)
 {
-    <p class="mt-3 px-3"><em>Tarieven laden...</em></p>
+    <p class="mt-3 px-3"><em>Gegevens laden...</em></p>
 }
 else
 {
     <div class="tickets-container mt-3 px-3">
-        @foreach (var tariff in tariffs)
+        @foreach (var seat in seatInfos)
         {
-            <div class="tariff-card d-flex justify-content-between align-items-center p-3 mb-2">
-                <div>
-                    <div class="tariff-name fw-bold">@tariff.DisplayName</div>
-                    <div class="tariff-price text-muted">@tariff.Price.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</div>
-                </div>
-                <div class="counter d-flex align-items-center gap-2">
-                    <button class="btn btn-counter" @onclick="() => Decrement(tariff.TariffId)" disabled="@(GetCount(tariff.TariffId) == 0)">−</button>
-                    <span class="count-display fw-bold">@GetCount(tariff.TariffId)</span>
-                    <button class="btn btn-counter" @onclick="() => Increment(tariff.TariffId)">+</button>
+            <div class="tariff-card p-3 mb-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="fw-bold">Rij @seat.RowLabel - Stoel @seat.SeatNumber</div>
+                    <select class="form-select tariff-select"
+                            value="@GetSelectedTariff(seat.SeatId)"
+                            @onchange="(e) => SetTariff(seat.SeatId, e)">
+                        @foreach (var tariff in tariffs)
+                        {
+                            <option value="@tariff.TariffId">
+                                @tariff.DisplayName — @tariff.Price.ToString("C2", nlCulture)
+                            </option>
+                        }
+                    </select>
                 </div>
             </div>
         }
@@ -90,15 +94,15 @@ else
         <div class="summary mt-4 p-3">
             <div class="d-flex justify-content-between mb-1">
                 <span>Tickets</span>
-                <span>@TotalTickets</span>
+                <span>@seatInfos.Count</span>
             </div>
             <div class="d-flex justify-content-between fw-bold fs-5">
                 <span>Totaal</span>
-                <span>@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
+                <span>@TotalPrice.ToString("C2", nlCulture)</span>
             </div>
         </div>
 
-        <button class="btn btn-dark w-100 mt-3 py-2 fw-bold" disabled="@(TotalTickets == 0)" @onclick="ShowPayment">
+        <button class="btn btn-dark w-100 mt-3 py-2 fw-bold" @onclick="ShowPayment">
             Doorgaan
         </button>
     </div>
@@ -136,11 +140,11 @@ else
                 </tr>
                 <tr>
                     <th>Tickets</th>
-                    <td>@TotalTickets</td>
+                    <td>@seatInfos?.Count</td>
                 </tr>
                 <tr>
                     <th>Bedrag</th>
-                    <td><strong style="font-size: 1.3rem; color: #28a745;">@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
+                    <td><strong style="font-size: 1.3rem; color: #28a745;">@TotalPrice.ToString("C2", nlCulture)</strong></td>
                 </tr>
             </table>
             <hr />
@@ -220,7 +224,7 @@ else
                 </tr>
                 <tr>
                     <th>Bedrag</th>
-                    <td><strong>@reservation.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
+                    <td><strong>@reservation.TotalAmount.ToString("C2", nlCulture)</strong></td>
                 </tr>
                 <tr>
                     <th>Status</th>
@@ -254,30 +258,75 @@ else
     [Parameter]
     public Guid ScreeningId { get; set; }
 
+    private static readonly System.Globalization.CultureInfo nlCulture = new("nl-NL");
+
     private List<TariffDto>? tariffs;
     private ScreeningResponseDto? screening;
     private ReservationGroupResponseDto? reservation;
-    private Dictionary<Guid, int> counts = new();
+    private List<SeatAvailabilityDto>? seatInfos;
+    private Dictionary<Guid, Guid> seatTariffs = new(); // seatId -> tariffId
     private string? errorMessage;
     private string? paymentError;
     private bool isProcessing;
     private bool showPaymentOverlay;
     private bool showTicketOverlay;
 
-    private int TotalTickets => counts.Values.Sum();
-    private decimal TotalPrice => tariffs?.Sum(t => t.Price * GetCount(t.TariffId)) ?? 0;
+    private decimal TotalPrice => tariffs == null ? 0 :
+        seatTariffs.Values.Sum(tariffId =>
+            tariffs.FirstOrDefault(t => t.TariffId == tariffId)?.Price ?? 0);
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            // Parse seat IDs from query string
+            var uri = new Uri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var seatsParam = query["seats"];
+
+            if (string.IsNullOrEmpty(seatsParam))
+            {
+                errorMessage = "Geen stoelen geselecteerd.";
+                return;
+            }
+
+            var seatIds = seatsParam.Split(',')
+                .Select(s => Guid.TryParse(s, out var id) ? id : (Guid?)null)
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .ToList();
+
+            if (seatIds.Count == 0)
+            {
+                errorMessage = "Geen geldige stoelen geselecteerd.";
+                return;
+            }
+
             var tariffTask = Http.GetFromJsonAsync<List<TariffDto>>("api/tariffs");
             var screeningTask = Http.GetFromJsonAsync<ScreeningResponseDto>($"api/screenings/{ScreeningId}");
+            var seatsTask = Http.GetFromJsonAsync<List<SeatAvailabilityDto>>($"api/screenings/{ScreeningId}/seats");
 
-            await Task.WhenAll(tariffTask, screeningTask);
+            await Task.WhenAll(tariffTask, screeningTask, seatsTask);
 
-            tariffs = tariffTask.Result;
+            tariffs = tariffTask.Result?.OrderBy(t => t.SortOrder).ToList() ?? new();
             screening = screeningTask.Result;
+            var allSeats = seatsTask.Result ?? new();
+
+            // Filter to only selected seats, preserving order
+            var seatIdSet = seatIds.ToHashSet();
+            seatInfos = allSeats
+                .Where(s => seatIdSet.Contains(s.SeatId))
+                .OrderBy(s => s.RowLabel)
+                .ThenBy(s => s.SeatNumber)
+                .ToList();
+
+            // Default all seats to the first tariff
+            if (tariffs.Count > 0)
+            {
+                var defaultTariffId = tariffs.First().TariffId;
+                foreach (var seat in seatInfos)
+                    seatTariffs[seat.SeatId] = defaultTariffId;
+            }
         }
         catch (HttpRequestException)
         {
@@ -285,22 +334,17 @@ else
         }
     }
 
-    private int GetCount(Guid tariffId) => counts.TryGetValue(tariffId, out var c) ? c : 0;
+    private string GetSelectedTariff(Guid seatId) =>
+        seatTariffs.TryGetValue(seatId, out var id) ? id.ToString() : "";
 
-    private void Increment(Guid tariffId)
+    private void SetTariff(Guid seatId, ChangeEventArgs e)
     {
-        counts[tariffId] = GetCount(tariffId) + 1;
-    }
-
-    private void Decrement(Guid tariffId)
-    {
-        var current = GetCount(tariffId);
-        if (current > 0) counts[tariffId] = current - 1;
+        if (Guid.TryParse(e.Value?.ToString(), out var tariffId))
+            seatTariffs[seatId] = tariffId;
     }
 
     private void ShowPayment()
     {
-        if (TotalTickets == 0) return;
         showPaymentOverlay = true;
         paymentError = null;
     }
@@ -312,23 +356,23 @@ else
 
         try
         {
-            // 1. Create reservation (assigns seats, creates orders per seat)
             var request = new
             {
                 ScreeningId,
-                Tickets = counts
-                    .Where(kv => kv.Value > 0)
-                    .Select(kv => new { TariffId = kv.Key, Count = kv.Value })
-                    .ToList()
+                SeatTickets = seatTariffs.Select(kv => new
+                {
+                    SeatId = kv.Key,
+                    TariffId = kv.Value
+                }).ToList()
             };
 
-            var response = await Http.PostAsJsonAsync("api/reservations", request);
+            var response = await Http.PostAsJsonAsync("api/reservations/website", request);
 
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync();
-                paymentError = body.Contains("SOLD_OUT") ? "Uitverkocht! Geen stoelen meer beschikbaar."
-                    : body.Contains("NO_ADJACENT") ? "Niet genoeg aaneengesloten stoelen beschikbaar."
+                paymentError = body.Contains("already taken")
+                    ? "Een of meer stoelen zijn inmiddels bezet. Ga terug en selecteer opnieuw."
                     : "Reservering mislukt. Probeer opnieuw.";
                 return;
             }
@@ -337,7 +381,6 @@ else
 
             if (reservation != null)
             {
-                // 2. Pay each order (one per seat)
                 foreach (var seat in reservation.Seats)
                 {
                     await Http.PostAsync($"api/orders/{seat.OrderId}/pay", null);
@@ -373,8 +416,8 @@ else
         await JS.InvokeVoidAsync("window.print");
     }
 
-    private async Task GoBack()
+    private void GoBack()
     {
-        await JS.InvokeVoidAsync("history.back");
+        Navigation.NavigateTo($"/website/SelectSeats/{ScreeningId}");
     }
 }

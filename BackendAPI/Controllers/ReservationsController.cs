@@ -79,4 +79,32 @@ namespace BackendAPI.Controllers
             return Ok(result);
         }
     }
+    
+    
+    [HttpPost("website")]
+    public async Task<IActionResult> ReserveWebsite(WebsiteReservationRequestDto request)
+    {
+        try
+        {
+            var result = await _reservationService.ReserveSpecificSeatsAsync(
+                request.ScreeningId, request.SeatTickets);
+
+            if (result == null)
+                return NotFound("Screening not found");
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "SEATS_TAKEN")
+        {
+            return Conflict("One or more selected seats are already taken");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "INVALID_SEATS")
+        {
+            return BadRequest("One or more seats do not belong to this hall");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "INVALID_TARIFF")
+        {
+            return BadRequest("Invalid tariff selected");
+        }
+    }
 }

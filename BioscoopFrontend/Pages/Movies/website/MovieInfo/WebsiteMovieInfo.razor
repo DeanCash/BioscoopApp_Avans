@@ -1,4 +1,4 @@
-@page "/kiosk/MovieInfo/{MovieId:guid}"
+@page "/website/MovieInfo/{MovieId:guid}"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
@@ -58,7 +58,7 @@ else
             </div>
         </div>
     </div>
-    <a href="/kiosk/Showing/@MovieId" class="choose-showing-btn d-block text-center p-3 mt-3">
+    <a href="/website/Showing/@MovieId" class="choose-showing-btn d-block text-center p-3 mt-3">
         Choose showing &rarr;
     </a>
 }
