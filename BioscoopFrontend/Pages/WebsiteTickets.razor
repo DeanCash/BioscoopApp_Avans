@@ -426,6 +426,6 @@ else
 
     private void GoBack()
     {
-        Navigation.NavigateTo($"/website/showing/{screening?.Movie?.MovieId ?? Guid.Empty}");
+        Navigation.NavigateTo($"/website/showings/{screening?.Movie?.MovieId ?? Guid.Empty}");
     }
 }
