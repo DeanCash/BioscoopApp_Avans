@@ -1,0 +1,220 @@
+@page "/kiosk/ticket/{PrintCode}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Ticket Afdrukken</PageTitle>
+
+<style>
+    body {
+        background: #f0f2f5;
+    }
+    .ticket-page {
+        max-width: 480px;
+        margin: 40px auto;
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+        border: 4px dashed #667eea;
+        text-align: center;
+    }
+    .ticket-table {
+        width: 100%;
+        text-align: left;
+        margin: 12px 0;
+    }
+    .ticket-table th {
+        padding: 7px 10px;
+        color: #888;
+        font-weight: 500;
+        width: 90px;
+        vertical-align: top;
+    }
+    .ticket-table td {
+        padding: 7px 10px;
+        color: #1a1a2e;
+    }
+    .btn-print {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        border: none;
+        color: white;
+        padding: 14px 36px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+    .btn-home {
+        background: transparent;
+        border: 2px solid #ddd;
+        color: #666;
+        padding: 14px 30px;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    .btn-home:hover { background: #f8f9fa; }
+
+    /* Alleen het ticket afdrukken — geen URL/headers van browser */
+    @@page {
+        margin: 0mm;
+        size: auto;
+    }
+    @@media print {
+        body * { visibility: hidden; }
+        .print-area, .print-area * { visibility: visible; }
+        .print-area {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            padding: 20px;
+        }
+        .no-print { display: none !important; }
+        .ticket-page {
+            box-shadow: none;
+            border: 2px dashed #667eea;
+            border-radius: 0;
+            margin: 0;
+            max-width: 100%;
+        }
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Laden...</span>
+        </div>
+        <p class="mt-3 text-muted">Betaling verwerken...</p>
+    </div>
+}
+else if (errorMessage != null)
+{
+    <div class="container" style="max-width: 480px; margin-top: 60px;">
+        <div class="alert alert-danger text-center">
+            <strong>Er ging iets mis</strong><br />
+            @errorMessage
+        </div>
+        <button class="btn btn-home w-100 mt-3" @onclick="GoHome">Terug naar begin</button>
+    </div>
+}
+else if (reservation != null)
+{
+    <div class="print-area">
+        <div class="ticket-page">
+            <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px;">
+                <div style="text-align: left; flex: 1;">
+                    <h3 style="margin: 0 0 4px 0; color: #1a1a2e; font-weight: 800;">CINEMA TICKET</h3>
+                    <p style="margin: 0; color: #666; font-size: 0.85rem;">Geldig op datum en tijdstip</p>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 14px 18px; border-radius: 12px; margin-bottom: 16px;">
+                <h4 style="margin: 0; font-size: 1.3rem; font-weight: 700;">@reservation.MovieTitle</h4>
+            </div>
+
+            <table class="ticket-table">
+                <tr>
+                    <th>Datum</th>
+                    <td><strong>@reservation.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</strong></td>
+                </tr>
+                <tr>
+                    <th>Aanvang</th>
+                    <td><strong style="font-size: 1.2rem; color: #e74c3c;">@reservation.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</strong></td>
+                </tr>
+                <tr>
+                    <th>Zaal</th>
+                    <td>
+                        <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 16px; border-radius: 20px; font-weight: bold;">
+                            ZAAL @reservation.HallNumber
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Stoelen</th>
+                    <td>
+                        @foreach (var seat in reservation.Seats)
+                        {
+                            <span class="badge" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); margin-right: 4px; margin-bottom: 4px;">
+                                Rij @seat.RowLabel - Stoel @seat.SeatNumber
+                            </span>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <th>Bedrag</th>
+                    <td><strong>@reservation.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td><span style="color: #27ae60; font-weight: bold;">BETAALD</span></td>
+                </tr>
+            </table>
+
+            <div class="no-print mt-4 d-flex gap-3 justify-content-center">
+                <button class="btn btn-print" @onclick="PrintTicket">
+                    Afdrukken
+                </button>
+                <button class="btn btn-home" @onclick="GoHome">
+                    Nieuw ticket
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string PrintCode { get; set; } = "";
+
+    [SupplyParameterFromQuery(Name = "session_id")]
+    public string? SessionId { get; set; }
+
+    private bool isLoading = true;
+    private string? errorMessage;
+    private ReservationGroupResponseDto? reservation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(SessionId))
+            {
+                var confirmResponse = await Http.PostAsJsonAsync(
+                    "api/stripe/confirm",
+                    new { SessionId });
+
+                if (!confirmResponse.IsSuccessStatusCode)
+                {
+                    errorMessage = "Betaling kon niet worden bevestigd. Neem contact op met de kassa.";
+                    isLoading = false;
+                    return;
+                }
+            }
+
+            reservation = await Http.GetFromJsonAsync<ReservationGroupResponseDto>(
+                $"api/reservations/by-code/{PrintCode}");
+
+            if (reservation == null)
+                errorMessage = "Ticket niet gevonden.";
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Verbinding met de server mislukt.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task PrintTicket()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+
+    private void GoHome()
+    {
+        Navigation.NavigateTo("/kiosk/home");
+    }
+}
