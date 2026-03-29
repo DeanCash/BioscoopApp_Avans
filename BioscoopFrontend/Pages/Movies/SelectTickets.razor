@@ -1,13 +1,121 @@
-@page "/SelectTickets/{ScreeningId:guid}"
+@page "/kiosk/SelectTickets/{ScreeningId:guid}"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
+<PageTitle>Tickets Kiezen</PageTitle>
+
 <style>
+    .page-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        padding: 30px 0 40px 0;
+        margin: -1rem -1rem 2rem -1rem;
+        text-align: center;
+    }
+    .page-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .page-header p {
+        opacity: 0.8;
+        font-size: 1rem;
+    }
+    .btn-back {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-back:hover {
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+    .tariff-card {
+        background: white;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        padding: 18px 22px;
+        margin-bottom: 12px;
+        transition: transform 0.2s;
+    }
+    .tariff-card:hover {
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+    .tariff-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1a1a2e;
+    }
+    .tariff-price {
+        font-size: 1rem;
+        color: #555;
+    }
+    .btn-counter {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        font-size: 1.3rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    .btn-counter:hover:not(:disabled) {
+        opacity: 0.85;
+    }
+    .btn-counter:disabled {
+        background: #ddd;
+    }
+    .count-display {
+        width: 36px;
+        text-align: center;
+        font-size: 1.3rem;
+        color: #1a1a2e;
+    }
+    .summary-box {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .btn-pay {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 16px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        width: 100%;
+        margin-top: 16px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-pay:hover:not(:disabled) {
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    .btn-pay:disabled {
+        opacity: 0.5;
+    }
+    /* Overlays */
     .ticket-overlay {
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.6);
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(10px);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -16,11 +124,11 @@
     .ticket {
         background: white;
         border-radius: 16px;
-        padding: 30px;
-        max-width: 480px;
+        padding: 20px 24px;
+        max-width: 380px;
         width: 90%;
         text-align: center;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        box-shadow: 0 25px 80px rgba(0,0,0,0.4);
     }
     .ticket-table {
         width: 100%;
@@ -28,18 +136,51 @@
         margin: 15px 0;
     }
     .ticket-table th {
-        padding: 6px 10px;
-        color: #666;
-        font-weight: 600;
-        width: 100px;
+        padding: 5px 8px;
+        color: #888;
+        font-weight: 500;
+        width: 80px;
+        vertical-align: top;
+        font-size: 0.85rem;
     }
     .ticket-table td {
-        padding: 6px 10px;
+        padding: 5px 8px;
+        color: #1a1a2e;
+        font-size: 0.9rem;
     }
-    .ticket-barcode {
-        font-family: 'Libre Barcode 128', monospace;
-        font-size: 2.5rem;
-        letter-spacing: 2px;
+    .btn-confirm {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        border: none;
+        color: white;
+        padding: 14px 36px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: transform 0.2s;
+    }
+    .btn-confirm:hover:not(:disabled) {
+        box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+        color: white;
+    }
+    .btn-cancel {
+        background: transparent;
+        border: 2px solid #ddd;
+        color: #666;
+        padding: 14px 30px;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    .btn-cancel:hover {
+        background: #f8f9fa;
+    }
+    .btn-print {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        border: none;
+        color: white;
+        padding: 14px 36px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 1rem;
     }
     @@media print {
         .no-print { display: none !important; }
@@ -48,36 +189,39 @@
     }
 </style>
 
-<div class="header-bar d-flex justify-content-between align-items-center p-3 border-2">
-    <div>
-        <h3 class="text-uppercase mb-0 fw-bold">Select Tickets</h3>
-        @if (screening?.Movie != null)
-        {
-            <small class="text-muted">@screening.Movie.Title</small>
-        }
-    </div>
-    <button class="btn btn-outline-secondary" @onclick="GoBack">
-        <span>&larr;</span>
+<div class="page-header">
+    <button class="btn btn-back mb-3" @onclick="GoBack">
+        <span>&larr;</span> Terug
     </button>
+    <h1>Tickets Kiezen</h1>
+    @if (screening?.Movie != null)
+    {
+        <p>@screening.Movie.Title</p>
+    }
 </div>
 
 @if (errorMessage != null)
 {
-    <p class="text-danger mt-3 px-3">@errorMessage</p>
+    <div class="alert alert-danger mx-3">@errorMessage</div>
 }
 else if (tariffs == null)
 {
-    <p class="mt-3 px-3"><em>Tarieven laden...</em></p>
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Laden...</span>
+        </div>
+        <p class="mt-3 text-muted">Tarieven laden...</p>
+    </div>
 }
 else
 {
-    <div class="tickets-container mt-3 px-3">
+    <div class="container" style="max-width: 600px;">
         @foreach (var tariff in tariffs)
         {
-            <div class="tariff-card d-flex justify-content-between align-items-center p-3 mb-2">
+            <div class="tariff-card d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="tariff-name fw-bold">@tariff.DisplayName</div>
-                    <div class="tariff-price text-muted">@tariff.Price.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</div>
+                    <div class="tariff-name">@tariff.DisplayName</div>
+                    <div class="tariff-price">@tariff.Price.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</div>
                 </div>
                 <div class="counter d-flex align-items-center gap-2">
                     <button class="btn btn-counter" @onclick="() => Decrement(tariff.TariffId)" disabled="@(GetCount(tariff.TariffId) == 0)">−</button>
@@ -137,27 +281,33 @@ else
                 <span>Totaal</span>
                 <span>@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
             </div>
+            @if (ArrangementPrice > 0)
+            {
+                <div class="d-flex justify-content-between mb-1" style="color: #e74c3c;">
+                    <span>Extra's</span>
+                    <span>@ArrangementPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
+                </div>
+            }
+            <hr class="my-2" />
+            <div class="d-flex justify-content-between fw-bold fs-5">
+                <span>Totaal</span>
+                <span>@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
+            </div>
         </div>
 
-        <button class="btn btn-dark w-100 mt-3 py-2 fw-bold" disabled="@(TotalTickets == 0)" @onclick="ShowPayment">
-            Doorgaan
+        <button class="btn btn-pay" disabled="@(TotalTickets == 0)" @onclick="ShowPayment">
+            Doorgaan &rarr;
         </button>
     </div>
 }
 
-@* ── PIN betaalscherm ── *@
+@* -- Stripe betaalscherm (overzicht voor doorsturen) -- *@
 @if (showPaymentOverlay)
 {
     <div class="ticket-overlay" @onclick="CancelPayment">
         <div class="ticket" @onclick:stopPropagation>
-            @if (screening?.Movie != null && !string.IsNullOrEmpty(screening.Movie.ImageUrl))
-            {
-                <img src="@screening.Movie.ImageUrl" style="width: 120px; border-radius: 8px; margin-bottom: 15px;" alt="@screening.Movie.Title" />
-            }
-            <div class="ticket-header">
-                <h2>PIN Betaling</h2>
-            </div>
-            <hr />
+            <h2 style="color: #1a1a2e; font-weight: 700; font-size: 1.3rem; margin-bottom: 12px;">Bestelling bevestigen</h2>
+            <hr style="border-color: #eee; margin: 10px 0;" />
             <table class="ticket-table">
                 <tr>
                     <th>Film</th>
@@ -173,7 +323,11 @@ else
                 </tr>
                 <tr>
                     <th>Zaal</th>
-                    <td><span class="badge bg-primary">Zaal @screening?.Hall?.Number</span></td>
+                    <td>
+                        <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">
+                            Zaal @screening?.Hall?.Number
+                        </span>
+                    </td>
                 </tr>
                 <tr>
                     <th>Tickets</th>
@@ -193,29 +347,30 @@ else
                 }
                 <tr>
                     <th>Bedrag</th>
-                    <td><strong style="font-size: 1.3rem; color: #28a745;">@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
+                    <td><strong style="font-size: 1.3rem; color: #27ae60;">@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
                 </tr>
             </table>
-            <hr />
-            <div class="alert alert-info text-center py-2 mb-3">
-                <small>Alleen PIN-betaling - geen contant geld geaccepteerd</small>
+            <hr style="border-color: #eee; margin: 10px 0;" />
+            <div style="background: #e8f5e9; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; justify-content: center;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" style="height: 24px;" alt="Stripe" />
+                <small style="color: #2e7d32;">Veilig betalen via Stripe</small>
             </div>
             @if (paymentError != null)
             {
                 <div class="alert alert-danger py-2">@paymentError</div>
             }
-            <div class="no-print d-flex gap-2 justify-content-center">
-                <button class="btn btn-success btn-lg" @onclick="ConfirmPinPayment" disabled="@isProcessing">
+            <div class="no-print d-flex gap-3 justify-content-center">
+                <button class="btn btn-confirm" @onclick="GoToStripePayment" disabled="@isProcessing">
                     @if (isProcessing)
                     {
-                        <span>Verwerken...</span>
+                        <span>Doorsturen naar Stripe...</span>
                     }
                     else
                     {
-                        <span>Betaal met PIN</span>
+                        <span>Betaal via Stripe &rarr;</span>
                     }
                 </button>
-                <button class="btn btn-outline-secondary" @onclick="CancelPayment" disabled="@isProcessing">
+                <button class="btn btn-cancel" @onclick="CancelPayment" disabled="@isProcessing">
                     Annuleren
                 </button>
             </div>
@@ -329,7 +484,6 @@ else
     private string? paymentError;
     private bool isProcessing;
     private bool showPaymentOverlay;
-    private bool showTicketOverlay;
 
     private int TotalTickets => counts.Values.Sum();
     private decimal TicketPrice => tariffs?.Sum(t => t.Price * GetCount(t.TariffId)) ?? 0;
@@ -403,15 +557,15 @@ else
         paymentError = null;
     }
 
-    private async Task ConfirmPinPayment()
+    private async Task GoToStripePayment()
     {
         isProcessing = true;
         paymentError = null;
 
         try
         {
-            // 1. Create reservation (assigns seats, creates orders per seat)
-            var request = new
+            // 1. Reservering aanmaken (stoelen toewijzen, orders per stoel)
+            var reservationRequest = new
             {
                 ScreeningId,
                 Tickets = counts
@@ -424,30 +578,40 @@ else
                     .ToList()
             };
 
-            var response = await Http.PostAsJsonAsync("api/reservations", request);
+            var reservationResponse = await Http.PostAsJsonAsync("api/reservations", reservationRequest);
 
-            if (!response.IsSuccessStatusCode)
+            if (!reservationResponse.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync();
+                var body = await reservationResponse.Content.ReadAsStringAsync();
                 paymentError = body.Contains("SOLD_OUT") ? "Uitverkocht! Geen stoelen meer beschikbaar."
                     : body.Contains("NO_ADJACENT") ? "Niet genoeg aaneengesloten stoelen beschikbaar."
                     : "Reservering mislukt. Probeer opnieuw.";
                 return;
             }
 
-            reservation = await response.Content.ReadFromJsonAsync<ReservationGroupResponseDto>();
+            reservation = await reservationResponse.Content.ReadFromJsonAsync<ReservationGroupResponseDto>();
+            if (reservation == null) return;
 
-            if (reservation != null)
+            // 2. Stripe Checkout sessie aanmaken
+            var baseUrl = Navigation.BaseUri.TrimEnd('/');
+            var checkoutResponse = await Http.PostAsJsonAsync("api/stripe/checkout", new
             {
-                // 2. Pay each order (one per seat)
-                foreach (var seat in reservation.Seats)
-                {
-                    await Http.PostAsync($"api/orders/{seat.OrderId}/pay", null);
-                }
+                reservation.PrintCode,
+                ScreeningId,
+                FrontendBaseUrl = baseUrl
+            });
+
+            if (!checkoutResponse.IsSuccessStatusCode)
+            {
+                paymentError = "Betaling kon niet worden gestart. Probeer opnieuw.";
+                return;
             }
 
-            showPaymentOverlay = false;
-            showTicketOverlay = true;
+            var result = await checkoutResponse.Content.ReadFromJsonAsync<CheckoutUrlResponse>();
+            if (result?.Url == null) return;
+
+            // 3. Doorsturen naar Stripe betaalpagina
+            Navigation.NavigateTo(result.Url, forceLoad: true);
         }
         catch (Exception)
         {
@@ -459,20 +623,12 @@ else
         }
     }
 
+    private record CheckoutUrlResponse(string Url);
+
     private void CancelPayment()
     {
         showPaymentOverlay = false;
         paymentError = null;
-    }
-
-    private void CloseTicket()
-    {
-        Navigation.NavigateTo("/films");
-    }
-
-    private async Task PrintTicket()
-    {
-        await JS.InvokeVoidAsync("window.print");
     }
 
     private async Task GoBack()

@@ -1,0 +1,431 @@
+@page "/website/tickets/{ScreeningId:guid}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Tickets Kopen</PageTitle>
+
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        padding: 40px 0;
+        margin: -1rem -1rem 2rem -1rem;
+        text-align: center;
+    }
+    .page-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .page-header p {
+        opacity: 0.8;
+        font-size: 1rem;
+    }
+    .btn-back {
+        background: transparent;
+        border: 2px solid rgba(255,255,255,0.5);
+        color: white;
+        border-radius: 25px;
+        padding: 6px 18px;
+        font-size: 0.9rem;
+    }
+    .btn-back:hover {
+        background: rgba(255,255,255,0.1);
+        color: white;
+    }
+    .tariff-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        padding: 16px 20px;
+        margin-bottom: 12px;
+    }
+    .tariff-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1a1a2e;
+    }
+    .tariff-price {
+        font-size: 1rem;
+        color: #555;
+    }
+    .btn-counter {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        font-size: 1.3rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-counter:disabled {
+        background: #ccc;
+    }
+    .count-display {
+        width: 32px;
+        text-align: center;
+        font-size: 1.2rem;
+    }
+    .summary-box {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .btn-pay {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 14px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        width: 100%;
+        margin-top: 16px;
+        transition: opacity 0.2s;
+    }
+    .btn-pay:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    /* Overlay */
+    .overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+    .overlay-card {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .ticket-table {
+        width: 100%;
+        text-align: left;
+        margin: 15px 0;
+    }
+    .ticket-table th {
+        padding: 6px 10px;
+        color: #666;
+        font-weight: 600;
+        width: 110px;
+    }
+    .ticket-table td {
+        padding: 6px 10px;
+    }
+    /* PrintCode box */
+    .printcode-box {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-radius: 16px;
+        padding: 28px;
+        margin: 20px 0;
+        color: white;
+    }
+    .printcode-label {
+        font-size: 0.85rem;
+        opacity: 0.7;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .printcode-value {
+        font-size: 2.8rem;
+        font-weight: 900;
+        letter-spacing: 8px;
+        font-family: monospace;
+        color: #fff;
+    }
+    .printcode-instruction {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        border-radius: 8px;
+        padding: 14px 18px;
+        text-align: left;
+        font-size: 0.95rem;
+        color: #856404;
+        margin-top: 16px;
+    }
+</style>
+
+<div class="page-header">
+    <h1>Tickets Kopen</h1>
+    @if (screening?.Movie != null)
+    {
+        <p>@screening.Movie.Title</p>
+    }
+    <button class="btn btn-back mt-2" @onclick="GoBack">&larr; Terug</button>
+</div>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (tariffs == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">Laden...</p>
+    </div>
+}
+else
+{
+    <div class="container" style="max-width: 600px;">
+        @foreach (var tariff in tariffs)
+        {
+            <div class="tariff-card d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="tariff-name">@tariff.DisplayName</div>
+                    <div class="tariff-price">@tariff.Price.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-counter" @onclick="() => Decrement(tariff.TariffId)" disabled="@(GetCount(tariff.TariffId) == 0)">−</button>
+                    <span class="count-display fw-bold">@GetCount(tariff.TariffId)</span>
+                    <button class="btn btn-counter" @onclick="() => Increment(tariff.TariffId)">+</button>
+                </div>
+            </div>
+        }
+
+        <div class="summary-box">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Aantal tickets</span>
+                <span class="fw-bold">@TotalTickets</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="fw-bold fs-5">Totaal</span>
+                <span class="fw-bold fs-5">@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
+            </div>
+        </div>
+
+        <button class="btn btn-pay" disabled="@(TotalTickets == 0)" @onclick="ShowPayment">
+            Online betalen &rarr;
+        </button>
+    </div>
+}
+
+@* ── Betaaloverzicht ── *@
+@if (showPaymentOverlay)
+{
+    <div class="overlay" @onclick="CancelPayment">
+        <div class="overlay-card" @onclick:stopPropagation>
+            <h3 class="fw-bold mb-1">Bevestig bestelling</h3>
+            <p class="text-muted mb-3">Controleer je gegevens voor je betaalt</p>
+            <table class="ticket-table">
+                <tr>
+                    <th>Film</th>
+                    <td><strong>@screening?.Movie?.Title</strong></td>
+                </tr>
+                <tr>
+                    <th>Datum</th>
+                    <td>@screening?.StartTimeUtc.LocalDateTime.ToString("dddd d MMMM yyyy")</td>
+                </tr>
+                <tr>
+                    <th>Aanvang</th>
+                    <td>@screening?.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</td>
+                </tr>
+                <tr>
+                    <th>Zaal</th>
+                    <td><span class="badge bg-primary">Zaal @screening?.Hall?.Number</span></td>
+                </tr>
+                <tr>
+                    <th>Tickets</th>
+                    <td>@TotalTickets</td>
+                </tr>
+                <tr>
+                    <th>Bedrag</th>
+                    <td><strong style="color: #28a745; font-size: 1.2rem;">@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
+                </tr>
+            </table>
+            <hr />
+            @if (paymentError != null)
+            {
+                <div class="alert alert-danger py-2">@paymentError</div>
+            }
+            <div class="d-flex gap-2 justify-content-center">
+                <button class="btn btn-success btn-lg px-4" @onclick="ConfirmPayment" disabled="@isProcessing">
+                    @if (isProcessing) { <span>Verwerken...</span> } else { <span>Betaal online</span> }
+                </button>
+                <button class="btn btn-outline-secondary btn-lg" @onclick="CancelPayment" disabled="@isProcessing">
+                    Annuleren
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@* ── PrintCode scherm (na betaling) ── *@
+@if (showCodeOverlay && reservation != null)
+{
+    <div class="overlay">
+        <div class="overlay-card">
+            <h3 class="fw-bold mb-1" style="color: #1a1a2e;">Betaling geslaagd!</h3>
+            <p class="text-muted">Je bestelling is bevestigd</p>
+
+            <div class="printcode-box">
+                <div class="printcode-label">Jouw ticketcode</div>
+                <div class="printcode-value">@reservation.PrintCode</div>
+            </div>
+
+            <div class="printcode-instruction">
+                <strong>Hoe werkt het?</strong><br />
+                Kom naar de bioscoop en voer deze code in bij het <strong>zelfbedieningskiosk</strong> om je tickets af te drukken. Bewaar deze code goed!
+            </div>
+
+            <table class="ticket-table mt-3">
+                <tr>
+                    <th>Film</th>
+                    <td><strong>@reservation.MovieTitle</strong></td>
+                </tr>
+                <tr>
+                    <th>Zaal</th>
+                    <td>Zaal @reservation.HallNumber</td>
+                </tr>
+                <tr>
+                    <th>Stoelen</th>
+                    <td>
+                        @foreach (var seat in reservation.Seats)
+                        {
+                            <span class="badge bg-secondary me-1">Rij @seat.RowLabel - @seat.SeatNumber</span>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <th>Betaald</th>
+                    <td><strong>@reservation.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
+                </tr>
+            </table>
+
+            <button class="btn btn-pay mt-3" @onclick="CloseAndGoHome">
+                Terug naar home
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid ScreeningId { get; set; }
+
+    private List<TariffDto>? tariffs;
+    private ScreeningResponseDto? screening;
+    private ReservationGroupResponseDto? reservation;
+    private Dictionary<Guid, int> counts = new();
+    private string? errorMessage;
+    private string? paymentError;
+    private bool isProcessing;
+    private bool showPaymentOverlay;
+    private bool showCodeOverlay;
+
+    private int TotalTickets => counts.Values.Sum();
+    private decimal TotalPrice => tariffs?.Sum(t => t.Price * GetCount(t.TariffId)) ?? 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tariffTask = Http.GetFromJsonAsync<List<TariffDto>>("api/tariffs");
+            var screeningTask = Http.GetFromJsonAsync<ScreeningResponseDto>($"api/screenings/{ScreeningId}");
+
+            await Task.WhenAll(tariffTask, screeningTask);
+
+            tariffs = tariffTask.Result;
+            screening = screeningTask.Result;
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Gegevens konden niet worden geladen.";
+        }
+    }
+
+    private int GetCount(Guid tariffId) => counts.TryGetValue(tariffId, out var c) ? c : 0;
+    private void Increment(Guid tariffId) => counts[tariffId] = GetCount(tariffId) + 1;
+    private void Decrement(Guid tariffId)
+    {
+        var c = GetCount(tariffId);
+        if (c > 0) counts[tariffId] = c - 1;
+    }
+
+    private void ShowPayment()
+    {
+        if (TotalTickets == 0) return;
+        showPaymentOverlay = true;
+        paymentError = null;
+    }
+
+    private async Task ConfirmPayment()
+    {
+        isProcessing = true;
+        paymentError = null;
+
+        try
+        {
+            var request = new
+            {
+                ScreeningId,
+                Tickets = counts
+                    .Where(kv => kv.Value > 0)
+                    .Select(kv => new { TariffId = kv.Key, Count = kv.Value })
+                    .ToList()
+            };
+
+            var response = await Http.PostAsJsonAsync("api/reservations", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                paymentError = body.Contains("SOLD_OUT") ? "Uitverkocht! Geen plaatsen meer beschikbaar."
+                    : body.Contains("NO_ADJACENT") ? "Niet genoeg aaneengesloten plaatsen beschikbaar."
+                    : "Reservering mislukt. Probeer opnieuw.";
+                return;
+            }
+
+            reservation = await response.Content.ReadFromJsonAsync<ReservationGroupResponseDto>();
+
+            if (reservation != null)
+            {
+                foreach (var seat in reservation.Seats)
+                {
+                    await Http.PostAsync($"api/orders/{seat.OrderId}/pay", null);
+                }
+            }
+
+            showPaymentOverlay = false;
+            showCodeOverlay = true;
+        }
+        catch (Exception)
+        {
+            paymentError = "Er ging iets mis. Probeer opnieuw.";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void CancelPayment()
+    {
+        showPaymentOverlay = false;
+        paymentError = null;
+    }
+
+    private void CloseAndGoHome()
+    {
+        Navigation.NavigateTo("/website/home");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo($"/website/showings/{screening?.Movie?.MovieId ?? Guid.Empty}");
+    }
+}

@@ -24,6 +24,7 @@ namespace BackendAPI.Models.Reservation
         public string PrintCode { get; set; } = null!;
         public string MovieTitle { get; set; } = null!;
         public int HallNumber { get; set; }
+        public DateTimeOffset StartTimeUtc { get; set; }
         public string Status { get; set; } = null!;
         public decimal TotalAmount { get; set; }
         public decimal TicketAmount { get; set; }

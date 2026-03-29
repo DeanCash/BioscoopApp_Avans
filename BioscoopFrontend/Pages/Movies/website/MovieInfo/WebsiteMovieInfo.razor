@@ -1,4 +1,4 @@
-@page "/kiosk/MovieInfo/{MovieId:guid}"
+@page "/website/MovieInfo/{MovieId:guid}"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
@@ -201,7 +201,7 @@ else
             </div>
         </div>
 
-        <a href="/kiosk/Showing/@MovieId" class="btn-choose">
+        <a href="/website/Showing/@MovieId" class="btn-choose">
             Kies een voorstelling &rarr;
         </a>
     </div>
@@ -228,6 +228,6 @@ else
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/kiosk/home");
+        Navigation.NavigateTo("/website/home");
     }
 }

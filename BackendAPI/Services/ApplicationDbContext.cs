@@ -1,6 +1,7 @@
 ﻿using BackendAPI.Models.Arrangement;
 using BackendAPI.Models.Hall;
 using BackendAPI.Models.Movie;
+using BackendAPI.Models.Newsletter;
 using BackendAPI.Models.Order;
 using BackendAPI.Models.Screening;
 using BackendAPI.Models.Seat;
@@ -25,6 +26,7 @@ namespace API.Services
         public DbSet<SeatModel> Seats { get; set; }
         public DbSet<TariffModel> Tariffs { get; set; }
         public DbSet<UserModel> Users { get; set; }
+        public DbSet<NewsletterSubscriberModel> NewsletterSubscribers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

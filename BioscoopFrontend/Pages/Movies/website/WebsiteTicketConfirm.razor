@@ -1,0 +1,234 @@
+@page "/website/ticket/{PrintCode}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Betalingsbevestiging</PageTitle>
+
+<style>
+    .confirm-page {
+        max-width: 560px;
+        margin: 40px auto;
+    }
+    .ticket-card {
+        background: white;
+        border-radius: 20px;
+        padding: 35px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        border: 4px dashed #667eea;
+        text-align: center;
+    }
+    .success-badge {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: white;
+        border-radius: 50%;
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 20px auto;
+    }
+    .ticket-table {
+        width: 100%;
+        text-align: left;
+        margin: 15px 0;
+    }
+    .ticket-table th {
+        padding: 8px 10px;
+        color: #888;
+        font-weight: 500;
+        width: 100px;
+        vertical-align: top;
+    }
+    .ticket-table td {
+        padding: 8px 10px;
+        color: #1a1a2e;
+    }
+    .ticket-barcode {
+        font-family: 'Libre Barcode 128', monospace;
+        font-size: 2.5rem;
+        letter-spacing: 2px;
+    }
+    .btn-print {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+    }
+    .btn-home {
+        background: transparent;
+        border: 2px solid #ddd;
+        color: #666;
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    .btn-home:hover { background: #f8f9fa; }
+    @@media print {
+        body * { visibility: hidden; }
+        .print-area, .print-area * { visibility: visible; }
+        .print-area {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            padding: 20px;
+        }
+        .no-print { display: none !important; }
+        .ticket-card { box-shadow: none; border-radius: 0; }
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Laden...</span>
+        </div>
+        <p class="mt-3 text-muted">Betaling verwerken...</p>
+    </div>
+}
+else if (errorMessage != null)
+{
+    <div class="confirm-page">
+        <div class="alert alert-danger text-center">
+            <strong>Er ging iets mis</strong><br />
+            @errorMessage
+        </div>
+        <button class="btn btn-home w-100 mt-3" @onclick="GoHome">Terug naar home</button>
+    </div>
+}
+else if (reservation != null)
+{
+    <div class="print-area">
+    <div class="confirm-page">
+        <div class="ticket-card">
+            <div class="success-badge">✓</div>
+
+            <h3 style="color: #1a1a2e; font-weight: 800; margin-bottom: 4px;">CINEMA TICKET</h3>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Betaling geslaagd — bewaar dit ticket goed</p>
+
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 18px; border-radius: 12px; margin-bottom: 20px;">
+                <h4 style="margin: 0; font-size: 1.5rem; font-weight: 700;">@reservation.MovieTitle</h4>
+            </div>
+
+            <table class="ticket-table">
+                <tr>
+                    <th>Datum</th>
+                    <td><strong>@reservation.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</strong></td>
+                </tr>
+                <tr>
+                    <th>Aanvang</th>
+                    <td><strong style="font-size: 1.3rem; color: #e74c3c;">@reservation.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</strong></td>
+                </tr>
+                <tr>
+                    <th>Zaal</th>
+                    <td>
+                        <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 20px; border-radius: 25px; font-weight: bold; font-size: 1.1rem;">
+                            ZAAL @reservation.HallNumber
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Stoelen</th>
+                    <td>
+                        <strong>
+                            @foreach (var seat in reservation.Seats)
+                            {
+                                <span class="badge" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); margin-right: 4px;">Rij @seat.RowLabel - Stoel @seat.SeatNumber</span>
+                            }
+                        </strong>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Bedrag</th>
+                    <td><strong>@reservation.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td><span style="color: #27ae60; font-weight: bold;">BETAALD (Stripe)</span></td>
+                </tr>
+            </table>
+
+            <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
+                <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Ticketcode</p>
+                <p style="margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: 6px; font-family: monospace; color: #1a1a2e;">@reservation.PrintCode</p>
+            </div>
+
+            <div style="border-top: 3px dashed #ccc; border-bottom: 3px dashed #ccc; padding: 14px 0; margin: 20px 0;">
+                <p style="margin: 0; font-family: 'Libre Barcode 128', monospace; font-size: 4rem; line-height: 1; letter-spacing: 0; color: #1a1a2e;">@reservation.PrintCode</p>
+                <p style="margin: 6px 0 0 0; font-size: 0.75rem; color: #999; letter-spacing: 2px;">@reservation.PrintCode</p>
+                <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #999;">Toon dit ticket bij de ingang</p>
+            </div>
+
+            <div class="no-print mt-3 d-flex gap-3 justify-content-center flex-wrap">
+                <button class="btn btn-print" @onclick="PrintTicket">
+                    Afdrukken / Opslaan
+                </button>
+                <button class="btn btn-home" @onclick="GoHome">
+                    Terug naar home
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string PrintCode { get; set; } = "";
+
+    [SupplyParameterFromQuery(Name = "session_id")]
+    public string? SessionId { get; set; }
+
+    private bool isLoading = true;
+    private string? errorMessage;
+    private ReservationGroupResponseDto? reservation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(SessionId))
+            {
+                var confirmResponse = await Http.PostAsJsonAsync(
+                    "api/stripe/confirm",
+                    new { SessionId });
+
+                if (!confirmResponse.IsSuccessStatusCode)
+                {
+                    errorMessage = "Betaling kon niet worden bevestigd. Neem contact op met de kassa.";
+                    isLoading = false;
+                    return;
+                }
+            }
+
+            reservation = await Http.GetFromJsonAsync<ReservationGroupResponseDto>(
+                $"api/reservations/by-code/{PrintCode}");
+
+            if (reservation == null)
+                errorMessage = "Ticket niet gevonden.";
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Verbinding met de server mislukt.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task PrintTicket()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+
+    private void GoHome()
+    {
+        Navigation.NavigateTo("/website/home");
+    }
+}

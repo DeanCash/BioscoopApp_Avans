@@ -1,0 +1,317 @@
+@page "/print-code"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Tickets Ophalen</PageTitle>
+
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        padding: 30px 0 40px 0;
+        margin: -1rem -1rem 2rem -1rem;
+        text-align: center;
+    }
+    .page-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .page-header p {
+        opacity: 0.8;
+        font-size: 1rem;
+    }
+    .btn-back {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-back:hover {
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+    .code-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        padding: 40px;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    .code-input {
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: 6px;
+        text-align: center;
+        text-transform: uppercase;
+        border: 3px solid #eee;
+        border-radius: 12px;
+        padding: 16px;
+        width: 100%;
+        font-family: monospace;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .code-input:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
+    }
+    .btn-search {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 16px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        width: 100%;
+        margin-top: 16px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-search:hover:not(:disabled) {
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    .btn-search:disabled {
+        opacity: 0.5;
+    }
+    /* Ticket overlay */
+    .ticket-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+    .ticket {
+        background: white;
+        border-radius: 20px;
+        padding: 35px;
+        max-width: 480px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+    }
+    .ticket-table {
+        width: 100%;
+        text-align: left;
+        margin: 15px 0;
+    }
+    .ticket-table th {
+        padding: 8px 10px;
+        color: #888;
+        font-weight: 500;
+        width: 100px;
+        vertical-align: top;
+    }
+    .ticket-table td {
+        padding: 8px 10px;
+        color: #1a1a2e;
+    }
+    .ticket-barcode {
+        font-family: 'Libre Barcode 128', monospace;
+        font-size: 2.5rem;
+        letter-spacing: 2px;
+    }
+    .btn-print {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        border: none;
+        color: white;
+        padding: 14px 36px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+    .btn-close-ticket {
+        background: transparent;
+        border: 2px solid #ddd;
+        color: #666;
+        padding: 14px 30px;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    .btn-close-ticket:hover {
+        background: #f8f9fa;
+    }
+    @@media print {
+        .no-print { display: none !important; }
+        .ticket-overlay { background: white; }
+        .ticket { box-shadow: none; max-width: 100%; }
+    }
+</style>
+
+<div class="page-header">
+    <button class="btn btn-back mb-3" @onclick="GoBack">
+        <span>&larr;</span> Terug
+    </button>
+    <h1>Tickets Ophalen</h1>
+    <p>Voer je code in om je tickets af te drukken</p>
+</div>
+
+<div class="code-card">
+    <p class="text-muted mb-3 text-center">Voer de code in die je thuis hebt ontvangen.</p>
+
+    <input class="code-input mb-3"
+           @bind="inputCode"
+           @bind:event="oninput"
+           placeholder="bijv. A1B2C3"
+           maxlength="10" />
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger py-2">@errorMessage</div>
+    }
+
+    <button class="btn btn-search"
+            disabled="@(string.IsNullOrWhiteSpace(inputCode) || isLoading)"
+            @onclick="LookupCode">
+        @if (isLoading) { <span>Zoeken...</span> } else { <span>Zoek ticket &rarr;</span> }
+    </button>
+</div>
+
+@* -- Ticketscherm -- *@
+@if (showTicketOverlay && reservation != null)
+{
+    <div class="ticket-overlay" @onclick="CloseTicket">
+        <div class="ticket" @onclick:stopPropagation style="border: 4px dashed #667eea;">
+
+            <div style="text-align: left; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 4px 0; color: #1a1a2e; font-weight: 800;">CINEMA TICKET</h3>
+                <p style="margin: 0; color: #666; font-size: 0.9rem;">Bewaar dit ticket goed</p>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 18px; border-radius: 12px; margin-bottom: 20px;">
+                <h4 style="margin: 0; font-size: 1.5rem; font-weight: 700;">@reservation.MovieTitle</h4>
+            </div>
+
+            <table class="ticket-table">
+                <tr>
+                    <th>Datum</th>
+                    <td><strong>@reservation.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</strong></td>
+                </tr>
+                <tr>
+                    <th>Aanvang</th>
+                    <td><strong style="font-size: 1.3rem; color: #e74c3c;">@reservation.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</strong></td>
+                </tr>
+                <tr>
+                    <th>Zaal</th>
+                    <td>
+                        <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 20px; border-radius: 25px; font-weight: bold; font-size: 1.1rem;">
+                            ZAAL @reservation.HallNumber
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Stoelen</th>
+                    <td>
+                        <strong>
+                            @foreach (var seat in reservation.Seats)
+                            {
+                                <span class="badge" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); margin-right: 4px;">Rij @seat.RowLabel - Stoel @seat.SeatNumber</span>
+                            }
+                        </strong>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Bedrag</th>
+                    <td><strong>@reservation.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td><span style="color: #27ae60; font-weight: bold;">BETAALD</span></td>
+                </tr>
+            </table>
+
+            <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
+                <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Ticketcode</p>
+                <p style="margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: 6px; font-family: monospace; color: #1a1a2e;">@reservation.PrintCode</p>
+            </div>
+
+            <div style="border-top: 3px dashed #ccc; border-bottom: 3px dashed #ccc; padding: 18px 0; margin: 20px 0;">
+                <p class="ticket-barcode" style="margin: 0;">||||| |||| | || ||| || |||| |||||</p>
+                <p style="margin: 8px 0 0 0; font-size: 0.8rem; color: #999;">Toon dit ticket bij de ingang</p>
+            </div>
+
+            <div class="no-print mt-3 d-flex gap-3 justify-content-center">
+                <button class="btn btn-print" @onclick="PrintTicket">
+                    Afdrukken
+                </button>
+                <button class="btn btn-close-ticket" @onclick="CloseTicket">
+                    Sluiten
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string? inputCode;
+    private bool isLoading;
+    private string? errorMessage;
+    private bool showTicketOverlay;
+    private ReservationGroupResponseDto? reservation;
+
+    private async Task LookupCode()
+    {
+        if (string.IsNullOrWhiteSpace(inputCode)) return;
+
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.GetAsync($"api/reservations/by-code/{inputCode.Trim().ToUpper()}");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                errorMessage = "Code niet gevonden. Controleer de code en probeer opnieuw.";
+                return;
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = "Er ging iets mis. Probeer opnieuw.";
+                return;
+            }
+
+            reservation = await response.Content.ReadFromJsonAsync<ReservationGroupResponseDto>();
+            showTicketOverlay = true;
+        }
+        catch (Exception)
+        {
+            errorMessage = "Verbinding mislukt. Probeer opnieuw.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void CloseTicket()
+    {
+        showTicketOverlay = false;
+        reservation = null;
+        inputCode = null;
+    }
+
+    private async Task PrintTicket()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/kiosk/home");
+    }
+}

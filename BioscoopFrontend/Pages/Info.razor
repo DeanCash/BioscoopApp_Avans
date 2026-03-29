@@ -1,0 +1,438 @@
+@page "/website/info"
+@inject IHttpClientFactory HttpClientFactory
+@using System.Net.Http.Json
+
+<PageTitle>Bioscoop Info</PageTitle>
+
+<style>
+    .info-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        padding: 40px 0;
+        margin: -1rem -1rem 2rem -1rem;
+        text-align: center;
+    }
+
+    .info-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .info-header p {
+        opacity: 0.8;
+        font-size: 1.1rem;
+    }
+
+    .info-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+    }
+
+    .info-card .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px 12px 0 0 !important;
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 14px 20px;
+    }
+
+    .info-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .opening-table th {
+        width: 50%;
+        font-weight: 600;
+        color: #555;
+    }
+
+    .opening-table td {
+        color: #333;
+    }
+
+    .opening-table tr.today td,
+    .opening-table tr.today th {
+        color: #764ba2;
+        font-weight: 700;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+        color: #333;
+    }
+
+    .contact-item:last-child {
+        border-bottom: none;
+    }
+
+    .contact-icon {
+        font-size: 1.1rem;
+        width: 30px;
+        text-align: center;
+        color: #764ba2;
+        font-weight: 600;
+    }
+
+    .map-wrapper {
+        border-radius: 0 0 12px 12px;
+        overflow: hidden;
+    }
+
+    .map-wrapper iframe {
+        display: block;
+        border: none;
+        width: 100%;
+        height: 480px;
+    }
+
+    .route-steps {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .route-steps li {
+        display: flex;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.95rem;
+        color: #333;
+    }
+
+    .route-steps li:last-child {
+        border-bottom: none;
+    }
+
+    .step-num {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        min-width: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .btn-directions {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 1rem;
+        transition: opacity 0.2s;
+    }
+
+    .btn-directions:hover {
+        opacity: 0.85;
+        color: white;
+    }
+
+    .newsletter-footer {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        padding: 48px 0;
+        margin: 2rem -1rem -1rem -1rem;
+        text-align: center;
+    }
+
+    .newsletter-footer h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .newsletter-footer p {
+        opacity: 0.75;
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+    }
+
+    .newsletter-form {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .newsletter-input {
+        border: none;
+        border-radius: 25px;
+        padding: 10px 22px;
+        font-size: 1rem;
+        width: 300px;
+        max-width: 100%;
+        outline: none;
+    }
+
+    .btn-subscribe {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 10px 26px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-subscribe:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .btn-subscribe:not(:disabled):hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+    }
+</style>
+
+<div class="info-header">
+    <h1>Pathe Tilburg</h1>
+    <p>Alles wat je moet weten over ons bioscoop</p>
+</div>
+
+<div class="container-fluid px-2">
+    <div class="row g-4">
+
+        <!-- Algemene Info -->
+        <div class="col-12 col-md-6">
+            <div class="card info-card h-100">
+                <div class="card-header">
+                    Algemene Informatie
+                </div>
+                <div class="card-body">
+                    <p>
+                        Welkom bij <strong>Pathe Tilburg</strong>, jouw ultieme bioscoopbeleving in het hart van Tilburg.
+                        Wij bieden de nieuwste films in prachtige zalen met state-of-the-art geluid en beeld.
+                    </p>
+                    <p>
+                        Of je nu komt voor een blockbuster, een familiefilm of een indie-titel &mdash; bij ons zit je altijd
+                        goed. Geniet van onze luxe stoelen, heerlijke snacks en een onvergetelijke filmervaring.
+                    </p>
+                    <hr />
+                    <div class="contact-item">
+                        <span class="contact-icon">Adres:</span>
+                        <span>Spoorlaan 458, 5038 CH Tilburg</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-icon">Tel:</span>
+                        <span>0900 - 1458 (&euro;0,45/min)</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-icon">Email:</span>
+                        <span>tilburg&#64;pathe.nl</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-icon">Web:</span>
+                        <span><a href="https://www.pathe.nl/bioscoop/tilburg" target="_blank" rel="noopener">pathe.nl/bioscoop/tilburg</a></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Openingstijden -->
+        <div class="col-12 col-md-6">
+            <div class="card info-card h-100">
+                <div class="card-header">
+                    Openingstijden
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">De kassa opent 30 minuten voor de eerste voorstelling.</p>
+                    <table class="table table-borderless opening-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Dag</th>
+                                <th>Tijden</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="@(GetTodayClass(DayOfWeek.Monday))">
+                                <td>Maandag</td>
+                                <td>12:00 &ndash; 23:00</td>
+                            </tr>
+                            <tr class="@(GetTodayClass(DayOfWeek.Tuesday))">
+                                <td>Dinsdag</td>
+                                <td>12:00 &ndash; 23:00</td>
+                            </tr>
+                            <tr class="@(GetTodayClass(DayOfWeek.Wednesday))">
+                                <td>Woensdag</td>
+                                <td>10:00 &ndash; 23:00</td>
+                            </tr>
+                            <tr class="@(GetTodayClass(DayOfWeek.Thursday))">
+                                <td>Donderdag</td>
+                                <td>12:00 &ndash; 23:00</td>
+                            </tr>
+                            <tr class="@(GetTodayClass(DayOfWeek.Friday))">
+                                <td>Vrijdag</td>
+                                <td>11:00 &ndash; 00:30</td>
+                            </tr>
+                            <tr class="@(GetTodayClass(DayOfWeek.Saturday))">
+                                <td>Zaterdag</td>
+                                <td>10:00 &ndash; 00:30</td>
+                            </tr>
+                            <tr class="@(GetTodayClass(DayOfWeek.Sunday))">
+                                <td>Zondag</td>
+                                <td>10:00 &ndash; 23:00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Routebeschrijving -->
+        <div class="col-12 col-md-5">
+            <div class="card info-card h-100">
+                <div class="card-header">
+                    Routebeschrijving vanuit Breda Centraal
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Vertrekpunt: <strong>Breda Centraal Station</strong> &rarr; Bestemming: <strong>Pathe Tilburg, Spoorlaan 458</strong>
+                    </p>
+                    <ul class="route-steps">
+                        <li>
+                            <span class="step-num">1</span>
+                            <span>Neem de <strong>trein</strong> vanaf Breda Centraal richting Tilburg (Intercity, ca. 15 min).</span>
+                        </li>
+                        <li>
+                            <span class="step-num">2</span>
+                            <span>Kom aan op <strong>Tilburg Centraal Station</strong> en verlaat het station via de hoofduitgang (kant: Stationsplein).</span>
+                        </li>
+                        <li>
+                            <span class="step-num">3</span>
+                            <span>Loop rechtdoor de <strong>Spoorlaan</strong> in, richting het stadscentrum (ca. 5 min lopen, 400 m).</span>
+                        </li>
+                        <li>
+                            <span class="step-num">4</span>
+                            <span>Pathe Tilburg bevindt zich aan uw <strong>linkerhand</strong> op <strong>Spoorlaan 458</strong>. Het bioscoopgebouw is duidelijk zichtbaar.</span>
+                        </li>
+                    </ul>
+                    <a class="btn-directions"
+                       href="https://www.google.com/maps/dir/Breda+Centraal+Station,+Stationsplein,+Breda/Path%C3%A9+Tilburg,+Spoorlaan+458,+5038+CH+Tilburg"
+                       target="_blank"
+                       rel="noopener">
+                        Open route in Google Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Google Maps directions embed -->
+        <div class="col-12 col-md-7">
+            <div class="card info-card">
+                <div class="card-header">
+                    Kaart &ndash; Route Breda Centraal naar Pathe Tilburg
+                </div>
+                <div class="map-wrapper">
+                    <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m28!1m12!1m3!1d77887.52!2d4.95!3d51.55!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m13!3e3!4m5!1s0x47c6a1f07cbcef3b%3A0x40ad9aab66ee2f!2sBreda+Centraal+Station%2C+Stationsplein%2C+4811+BB+Breda!3m2!1d51.5949!2d4.7799!4m5!1s0x47c6be1b3b5b9c2b%3A0x1e3d7d8b3a1f2c4a!2sSpooorlaan+458%2C+5038+CH+Tilburg!3m2!1d51.5592!2d5.0826!5e0!3m2!1snl!2snl!4v1700000000000!5m2!1snl!2snl"
+                        allowfullscreen
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        title="Route van Breda Centraal naar Pathe Tilburg">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="newsletter-footer">
+    <h2>Nieuwsbrief</h2>
+    <p>Ontvang als eerste het laatste nieuws over films en acties van Pathe Tilburg.</p>
+
+    @if (subscribeSuccess)
+    {
+        <div class="alert alert-success d-inline-block px-4 py-2 rounded-pill">
+            Bedankt! Je bent aangemeld voor de nieuwsbrief.
+        </div>
+    }
+    else
+    {
+        <div class="newsletter-form">
+            <input class="newsletter-input"
+                   type="email"
+                   placeholder="Jouw e-mailadres"
+                   @bind="subscribeEmail"
+                   @bind:event="oninput"
+                   disabled="@isSubscribing" />
+            <button class="btn-subscribe"
+                    @onclick="SubscribeAsync"
+                    disabled="@(isSubscribing || string.IsNullOrWhiteSpace(subscribeEmail))">
+                @if (isSubscribing)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                }
+                Aanmelden
+            </button>
+        </div>
+        @if (subscribeError != null)
+        {
+            <p class="mt-3" style="color:#ffb3b3;">@subscribeError</p>
+        }
+    }
+</div>
+
+@code {
+    private string GetTodayClass(DayOfWeek day)
+    {
+        return DateTime.Now.DayOfWeek == day ? "today" : string.Empty;
+    }
+
+    private string subscribeEmail = "";
+    private bool isSubscribing;
+    private bool subscribeSuccess;
+    private string? subscribeError;
+
+    private async Task SubscribeAsync()
+    {
+        isSubscribing = true;
+        subscribeError = null;
+        try
+        {
+            var http = HttpClientFactory.CreateClient("PublicClient");
+            var response = await http.PostAsJsonAsync("api/newsletter/subscribe", new { Email = subscribeEmail.Trim() });
+
+            if (response.IsSuccessStatusCode)
+            {
+                subscribeSuccess = true;
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                subscribeError = "Dit e-mailadres is al aangemeld.";
+            }
+            else
+            {
+                subscribeError = "Er is iets misgegaan. Probeer het later opnieuw.";
+            }
+        }
+        catch
+        {
+            subscribeError = "Er is iets misgegaan. Probeer het later opnieuw.";
+        }
+        finally
+        {
+            isSubscribing = false;
+        }
+    }
+}

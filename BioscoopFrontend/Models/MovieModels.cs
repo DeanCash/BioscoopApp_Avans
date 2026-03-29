@@ -81,6 +81,16 @@ public class SeatDto
     public int SeatNumber { get; set; }
 }
 
+public class SimpleMovieDto
+{
+    public Guid MovieId { get; set; }
+    public string Title { get; set; } = "";
+    public string? ImageUrl { get; set; }
+    public string Genre { get; set; } = "";
+    public int DurationMinutes { get; set; }
+    public int Age { get; set; }
+}
+
 public class TariffDto
 {
     public Guid TariffId { get; set; }
@@ -105,6 +115,7 @@ public class ReservationGroupResponseDto
     public string PrintCode { get; set; } = "";
     public string MovieTitle { get; set; } = "";
     public int HallNumber { get; set; }
+    public DateTimeOffset StartTimeUtc { get; set; }
     public string Status { get; set; } = "";
     public decimal TotalAmount { get; set; }
     public decimal TicketAmount { get; set; }
@@ -118,6 +129,14 @@ public class ReservationSeatDto
     public Guid OrderId { get; set; }
     public string RowLabel { get; set; } = "";
     public int SeatNumber { get; set; }
+}
+
+public class SeatAvailabilityDto
+{
+    public Guid SeatId { get; set; }
+    public string RowLabel { get; set; } = "";
+    public int SeatNumber { get; set; }
+    public bool IsReserved { get; set; }
 }
 
 // Arrangement DTOs voor horeca

@@ -1,6 +1,7 @@
-@page "/films"
-@inject HttpClient Http
+@page "/kiosk/home"
+@inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager Navigation
+@using BioscoopFrontend.Models
 
 <PageTitle>Eerstkomende Films</PageTitle>
 
@@ -13,7 +14,6 @@
         cursor: pointer;
     }
     .movie-card:hover {
-        transform: translateY(-5px);
         box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
     }
     .movie-poster {
@@ -61,10 +61,107 @@
         transition: transform 0.2s, box-shadow 0.2s;
     }
     .btn-details:hover {
-        transform: scale(1.05);
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         color: white;
     }
+    .btn-secret {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border: none;
+        color: white;
+        padding: 10px 22px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+        white-space: nowrap;
+    }
+    .btn-secret:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.5);
+        color: white;
+    }
+    .page-header-inner {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .page-header-text {
+        flex: 1;
+        text-align: center;
+    }
+    .page-header-action {
+        position: absolute;
+        right: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+    }
+    .modal-box {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        max-width: 460px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .modal-box h3 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 1rem;
+    }
+    .modal-box p {
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    .modal-price {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #f5576c;
+        margin-bottom: 1.5rem;
+    }
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+    .btn-select {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border: none;
+        color: white;
+        padding: 9px 24px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-select:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        color: white;
+    }
+    .btn-cancel {
+        background: #e9ecef;
+        border: none;
+        color: #555;
+        padding: 9px 24px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+    .btn-cancel:hover {
+        background: #dee2e6;
+        color: #333;
+    }
+
     .search-filters {
         background: white;
         padding: 20px;
@@ -105,10 +202,21 @@
 </style>
 
 <div class="page-header">
-    <h1>Eerstkomende Films</h1>
-    <p>Kies een film en boek je tickets</p>
+    <div class="page-header-inner">
+        <div class="d-flex justify-content-end px-4 pt-2">
+            <button class="btn btn-outline-light" @onclick='() => Navigation.NavigateTo("/print-code")'>
+                Tickets ophalen
+            </button>
+        </div>
+        <div class="page-header-text">
+            <h1>Eerstkomende Films</h1>
+            <p>Bekijk films met voorstellingen in de komende 7 dagen</p>
+        </div>
+        <div class="page-header-action">
+            <button class="btn btn-secret" @onclick="OpenSecretModal">🎭 Secret Movie</button>
+        </div>
+    </div>
 </div>
-
 @* ── Zoek en Filter sectie ── *@
 <div class="search-filters">
     <div class="row g-3 align-items-center">
@@ -155,6 +263,24 @@
     }
 </div>
 
+@if (showSecretModal)
+{
+    <div class="modal-backdrop" @onclick="CloseSecretModal">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <h3>Secret Movie</h3>
+            <p>
+                Benieuwd naar een verrassingfilm? Bij de <strong>Secret Movie</strong> weet je van tevoren niet welke film er gedraaid wordt.
+                Laat je verrassen en beleef een unieke bioscoopervaring! De film wordt pas onthuld wanneer je in de zaal zit.
+            </p>
+            <div class="modal-price">Prijs: €2,50</div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" @onclick="CloseSecretModal">Annuleren</button>
+                <button class="btn btn-select" @onclick="SelectSecretMovie">Selecteren</button>
+            </div>
+        </div>
+    </div>
+}
+
 @if (movies == null)
 {
     <div class="text-center py-5">
@@ -172,7 +298,7 @@ else if (movies.Count == 0)
 {
     <div class="alert alert-info text-center">
         <h4>Geen films beschikbaar</h4>
-        <p>Er zijn momenteel geen films gepland voor de komende 14 dagen.</p>
+        <p>Er zijn momenteel geen films gepland voor de komende dagen.</p>
     </div>
 }
 else if (FilteredMovies.Count == 0)
@@ -225,6 +351,7 @@ else
 @code {
     private List<UpcomingMovieDto>? movies;
     private string? loadError;
+    private bool showSecretModal;
 
     // Filter state
     private string searchQuery = "";
@@ -273,9 +400,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadMoviesAsync();
+    }
+
+    private async Task LoadMoviesAsync()
+    {
         try
         {
-            movies = await Http.GetFromJsonAsync<List<UpcomingMovieDto>>("api/movies/upcoming");
+            loadError = null;
+            movies = null;
+            var http = HttpClientFactory.CreateClient("PublicClient");
+            movies = await http.GetFromJsonAsync<List<UpcomingMovieDto>>("api/movies/upcoming?daysAhead=7");
         }
         catch (Exception ex)
         {
@@ -293,6 +428,14 @@ else
 
     private void GoToDetails(Guid movieId)
     {
-        Navigation.NavigateTo($"/MovieInfo/{movieId}");
+        Navigation.NavigateTo($"/kiosk/MovieInfo/{movieId}");
+    }
+
+    private void OpenSecretModal() => showSecretModal = true;
+    private void CloseSecretModal() => showSecretModal = false;
+
+    private void SelectSecretMovie()
+    {
+        showSecretModal = false;
     }
 }
