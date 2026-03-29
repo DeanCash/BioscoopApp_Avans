@@ -18,6 +18,7 @@
         </div>
 
         <div class="header-actions">
+            <button class="add-button" @onclick="GoToMailing">Nieuwsbrief</button>
             <button class="logout-button" @onclick="Logout">↪ Logout</button>
             <button class="back-button" @onclick="GoBack">←</button>
         </div>
@@ -26,7 +27,6 @@
     @if (!string.IsNullOrWhiteSpace(errorMessage))
     {
         <div class="alert alert-error">
-            <span class="alert-icon">⚠️</span>
             <span>@errorMessage</span>
         </div>
     }
@@ -34,8 +34,27 @@
     <section class="dashboard-section">
         <div class="section-header">
             <h2>Films</h2>
-            <button class="add-button" @onclick="AddFilm">＋ Add film</button>
+            <div style="display:flex;gap:0.5rem;">
+                <button class="add-button" @onclick="ImportFilms" disabled="@isImporting">
+                    @if (isImporting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        <span>Importeren...</span>
+                    }
+                    else
+                    {
+                        <span>Nieuwe films ophalen</span>
+                    }
+                </button>
+                <button class="add-button" @onclick="AddFilm">＋ Add film</button>
+            </div>
         </div>
+        @if (importMessage != null)
+        {
+            <div class="alert @(importSuccess ? "alert-success" : "alert-error") mb-2">
+                <span>@importMessage</span>
+            </div>
+        }
 
         <div class="list-box">
             @if (movies.Count == 0)
@@ -139,6 +158,9 @@
 
 @code {
     private string? errorMessage;
+    private bool isImporting;
+    private string? importMessage;
+    private bool importSuccess;
 
     private List<MovieItem> movies = new();
     private List<HallItem> halls = new();
@@ -195,9 +217,41 @@
         Nav.NavigateTo("/", forceLoad: true);
     }
 
+    private async Task ImportFilms()
+    {
+        isImporting = true;
+        importMessage = null;
+        try
+        {
+            var response = await Http.PostAsync("/api/movies/import?pages=3", null);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<ImportResult>();
+                importMessage = result?.Message ?? "Import voltooid.";
+                importSuccess = true;
+                await LoadData();
+            }
+            else
+            {
+                importMessage = "Import mislukt.";
+                importSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            importMessage = $"Fout: {ex.Message}";
+            importSuccess = false;
+        }
+        finally
+        {
+            isImporting = false;
+        }
+    }
+
     private void AddFilm() => Nav.NavigateTo("/admin-panel/films/create");
     private void AddHall() => Nav.NavigateTo("/admin-panel/halls/create");
     private void AddShowing() => Nav.NavigateTo("/admin-panel/showings/create");
+    private void GoToMailing() => Nav.NavigateTo("/admin-panel/mailing");
 
     private void EditFilm(Guid id) => Nav.NavigateTo($"/admin-panel/films/edit/{id}");
     private void EditHall(Guid id) => Nav.NavigateTo($"/admin-panel/halls/edit/{id}");
@@ -248,6 +302,12 @@
             2 => "200 seats",
             _ => "Unknown layout"
         };
+    }
+
+    private class ImportResult
+    {
+        public int Imported { get; set; }
+        public string? Message { get; set; }
     }
 
     public class MovieItem
