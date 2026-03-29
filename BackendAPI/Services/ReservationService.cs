@@ -49,11 +49,13 @@ namespace BackendAPI.Services
                     ticketList.Add((line.TariffId, tariff.Price));
             }
 
-            // Look up arrangement prices
+            // Look up arrangement prices (fetch active arrangements in memory to avoid MySQL EF Core Contains bug)
             var arrangementIds = arrangements.Select(a => a.ArrangementId).Distinct().ToHashSet();
-            var arrangementModels = await _db.Arrangements
-                .Where(a => arrangementIds.Contains(a.ArrangementId) && a.IsActive)
-                .ToDictionaryAsync(a => a.ArrangementId);
+            var arrangementModels = arrangementIds.Count > 0
+                ? (await _db.Arrangements.Where(a => a.IsActive).ToListAsync())
+                    .Where(a => arrangementIds.Contains(a.ArrangementId))
+                    .ToDictionary(a => a.ArrangementId)
+                : new Dictionary<Guid, Models.Arrangement.ArrangementModel>();
 
             // Validate arrangements
             var arrangementLines = new List<(Guid ArrangementId, string Name, int Quantity, decimal UnitPrice, decimal LineTotal)>();

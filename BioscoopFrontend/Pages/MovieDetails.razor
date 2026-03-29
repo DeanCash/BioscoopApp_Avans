@@ -738,4 +738,12 @@ else
     {
         await JS.InvokeVoidAsync("window.print");
     }
+
+    private void OpenPrintPage()
+    {
+        if (printCode != null)
+        {
+            Navigation.NavigateTo($"/kiosk/print/{printCode}");
+        }
+    }
 }
