@@ -111,6 +111,7 @@ public class ReservationGroupResponseDto
     public string PrintCode { get; set; } = "";
     public string MovieTitle { get; set; } = "";
     public int HallNumber { get; set; }
+    public DateTimeOffset StartTimeUtc { get; set; }
     public string Status { get; set; } = "";
     public decimal TotalAmount { get; set; }
     public List<ReservationSeatDto> Seats { get; set; } = new();
@@ -121,4 +122,12 @@ public class ReservationSeatDto
     public Guid OrderId { get; set; }
     public string RowLabel { get; set; } = "";
     public int SeatNumber { get; set; }
+}
+
+public class SeatAvailabilityDto
+{
+    public Guid SeatId { get; set; }
+    public string RowLabel { get; set; } = "";
+    public int SeatNumber { get; set; }
+    public bool IsReserved { get; set; }
 }

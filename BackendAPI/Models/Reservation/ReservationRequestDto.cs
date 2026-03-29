@@ -19,4 +19,22 @@ namespace BackendAPI.Models.Reservation
         [Range(1, 10)]
         public int Count { get; set; }
     }
+
+    public class WebsiteReservationRequestDto
+    {
+        [Required]
+        public Guid ScreeningId { get; set; }
+
+        [Required]
+        public List<SeatTicketDto> SeatTickets { get; set; } = new();
+    }
+
+    public class SeatTicketDto
+    {
+        [Required]
+        public Guid SeatId { get; set; }
+
+        [Required]
+        public Guid TariffId { get; set; }
+    }
 }

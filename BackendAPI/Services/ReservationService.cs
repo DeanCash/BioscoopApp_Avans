@@ -137,6 +137,101 @@ namespace BackendAPI.Services
             };
         }
 
+        public async Task<ReservationGroupResponseDto?> ReserveSpecificSeatsAsync(
+            Guid screeningId, List<SeatTicketDto> seatTickets)
+        {
+            var screening = await _db.Screenings
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .FirstOrDefaultAsync(s => s.ScreeningId == screeningId);
+
+            if (screening == null)
+                return null;
+
+            if (seatTickets.Count == 0)
+                throw new InvalidOperationException("NO_TICKETS");
+
+            // Validate all seats belong to this hall
+            var requestedSeatIds = seatTickets.Select(st => st.SeatId).ToList();
+            var hallSeats = await _db.Seats
+                .Where(s => s.HallId == screening.HallId)
+                .ToListAsync();
+            var hallSeatDict = hallSeats
+                .Where(s => requestedSeatIds.Contains(s.SeatId))
+                .ToDictionary(s => s.SeatId);
+
+            if (hallSeatDict.Count != requestedSeatIds.Count)
+                throw new InvalidOperationException("INVALID_SEATS");
+
+            // Check none are already reserved
+            var reservedSeatIds = await _db.Orders
+                .Where(o => o.ScreeningId == screeningId && o.SeatId != null)
+                .Select(o => o.SeatId)
+                .ToListAsync();
+
+            var reservedSet = reservedSeatIds.ToHashSet();
+            if (requestedSeatIds.Any(id => reservedSet.Contains(id)))
+                throw new InvalidOperationException("SEATS_TAKEN");
+
+            // Validate tariffs
+            var tariffIds = seatTickets.Select(st => st.TariffId).Distinct().ToList();
+            var tariffs = (await _db.Tariffs.ToListAsync())
+                .Where(t => tariffIds.Contains(t.TariffId))
+                .ToDictionary(t => t.TariffId);
+
+            if (tariffs.Count != tariffIds.Count)
+                throw new InvalidOperationException("INVALID_TARIFF");
+
+            var printCode = Guid.NewGuid().ToString("N")[..6].ToUpper();
+            var orders = new List<OrderModel>();
+
+            foreach (var st in seatTickets)
+            {
+                var tariff = tariffs[st.TariffId];
+                var order = new OrderModel
+                {
+                    OrderId = Guid.NewGuid(),
+                    ScreeningId = screeningId,
+                    SeatId = st.SeatId,
+                    TariffId = st.TariffId,
+                    Status = "reserved",
+                    PaymentStatus = "pending",
+                    TotalAmount = tariff.Price,
+                    PrintCode = printCode,
+                    CreatedAtUtc = DateTimeOffset.UtcNow,
+                };
+                orders.Add(order);
+                _db.Orders.Add(order);
+            }
+
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                foreach (var order in orders)
+                    _db.Entry(order).State = EntityState.Detached;
+
+                throw new InvalidOperationException("SEATS_TAKEN");
+            }
+
+            return new ReservationGroupResponseDto
+            {
+                PrintCode = printCode,
+                MovieTitle = screening.Movie.Title,
+                HallNumber = screening.Hall.Number,
+                Status = "reserved",
+                TotalAmount = orders.Sum(o => o.TotalAmount),
+                Seats = seatTickets.Select((st, i) => new ReservationSeatDto
+                {
+                    OrderId = orders[i].OrderId,
+                    RowLabel = hallSeatDict[st.SeatId].RowLabel,
+                    SeatNumber = hallSeatDict[st.SeatId].SeatNumber,
+                }).ToList(),
+            };
+        }
+
         private static List<SeatModel>? FindBestAdjacentGroup(
             List<SeatModel> availableSeats, int groupSize, Func<SeatModel, double> scoreSeat)
         {

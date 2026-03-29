@@ -1,11 +1,9 @@
-@page "/films"
+@page "/kiosk/home"
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager Navigation
 @using BioscoopFrontend.Models
 
 <PageTitle>Eerstkomende Films</PageTitle>
-
-
 
 <style>
     .movie-card {
@@ -16,7 +14,6 @@
         cursor: pointer;
     }
     .movie-card:hover {
-        transform: translateY(-5px);
         box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
     }
     .movie-poster {
@@ -64,7 +61,6 @@
         transition: transform 0.2s, box-shadow 0.2s;
     }
     .btn-details:hover {
-        transform: scale(1.05);
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         color: white;
     }
@@ -169,6 +165,11 @@
 
 <div class="page-header">
     <div class="page-header-inner">
+        <div class="d-flex justify-content-end px-4 pt-2">
+            <button class="btn btn-outline-light" @onclick='() => Navigation.NavigateTo("/print-code")'>
+                Tickets ophalen
+            </button>
+        </div>
         <div class="page-header-text">
             <h1>Eerstkomende Films</h1>
             <p>Bekijk films met voorstellingen in de komende 7 dagen</p>
@@ -214,7 +215,7 @@ else if (movies.Count == 0)
 {
     <div class="alert alert-info text-center">
         <h4>Geen films beschikbaar</h4>
-        <p>Er zijn momenteel geen films in de database. Importeer films via het beheerpaneel.</p>
+        <p>Er zijn momenteel geen films gepland voor de komende dagen.</p>
     </div>
 }
 else
@@ -274,7 +275,7 @@ else
 
     private void GoToDetails(Guid movieId)
     {
-        Navigation.NavigateTo($"/MovieInfo/{movieId}");
+        Navigation.NavigateTo($"/kiosk/MovieInfo/{movieId}");
     }
 
     private void OpenSecretModal() => showSecretModal = true;
