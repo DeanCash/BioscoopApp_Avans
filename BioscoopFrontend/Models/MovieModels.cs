@@ -77,6 +77,16 @@ public class SeatDto
     public int SeatNumber { get; set; }
 }
 
+public class SimpleMovieDto
+{
+    public Guid MovieId { get; set; }
+    public string Title { get; set; } = "";
+    public string? ImageUrl { get; set; }
+    public string Genre { get; set; } = "";
+    public int DurationMinutes { get; set; }
+    public int Age { get; set; }
+}
+
 public class TariffDto
 {
     public Guid TariffId { get; set; }

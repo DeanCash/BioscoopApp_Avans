@@ -1,0 +1,73 @@
+﻿@page "/printticket"
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? movie { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? date { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? time { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? seats { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? code { get; set; }
+
+    private async Task PrintPage()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+
+    private void ClosePage()
+    {
+        Navigation.NavigateTo("/films");
+    }
+}
+
+<div class="ticket-overlay">
+    <div class="ticket" role="region" aria-label="Ticket summary">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px;">
+            <div>
+                <h2 style="margin:0; color:#1a1a2e; font-weight:800;">@(movie ?? "Ticket")</h2>
+                <small style="color:#666;">@((date ?? "") + (string.IsNullOrEmpty(time) ? "" : " • " + time))</small>
+            </div>
+            <div class="no-print">
+                <button class="btn btn-outline-secondary" style="margin-right:8px;" @onclick="ClosePage">Sluiten</button>
+                <button class="btn btn-primary" @onclick="PrintPage">Print</button>
+            </div>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; padding: 14px; margin-bottom: 16px; text-align:left;">
+            <table class="ticket-table" style="margin:0;">
+                <tr>
+                    <th>Film</th>
+                    <td><strong>@(movie ?? "-")</strong></td>
+                </tr>
+                <tr>
+                    <th>Datum</th>
+                    <td>@(date ?? "-")</td>
+                </tr>
+                <tr>
+                    <th>Tijd</th>
+                    <td>@(time ?? "-")</td>
+                </tr>
+                <tr>
+                    <th>Stoelen</th>
+                    <td>@(seats ?? "-")</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="text-align:center; margin: 14px 0 8px 0;">
+            <div class="ticket-barcode" style="font-family: monospace; font-size: 2.2rem; letter-spacing: 6px;">@(code ?? "-")</div>
+            <p style="margin:8px 0 0 0; color:#777;">Toon dit ticket bij binnenkomst in de zaal</p>
+        </div>
+    </div>
+</div>

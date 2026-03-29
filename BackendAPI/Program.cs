@@ -1,6 +1,7 @@
 using API.Services;
 using BackendAPI.Services.Movies;
 using BackendAPI.Services;
+using BackendAPI.Services.Newsletter;
 using BackendAPI.Models.User;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -14,13 +15,15 @@ builder.Services.AddCors(options =>
     options.AddPolicy("Frontend", policy =>
         policy.WithOrigins(
                 "http://localhost:5100",
-                "https://localhost:7076")
+                "https://localhost:7076",
+                "https://localhost:7120")
             .AllowAnyHeader()
             .AllowCredentials()
             .AllowAnyMethod());
 });
 
 builder.Services.AddScoped<IMovieQueryService, MovieQueryService>();
+builder.Services.AddHttpClient<ITmdbService, TmdbService>();
 builder.Services.AddControllers().AddJsonOptions(o =>
 {
     o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -47,6 +50,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 });
 
 builder.Services.AddScoped<ReservationService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
     {
@@ -84,7 +88,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    DbSeeder.Seed(db);
+    db.Database.Migrate();
+    //DbSeeder.Seed(db);
     SeedUsers(db);
 }
 
