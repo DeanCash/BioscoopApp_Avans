@@ -281,18 +281,6 @@ else
                 <span>Totaal</span>
                 <span>@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
             </div>
-            @if (ArrangementPrice > 0)
-            {
-                <div class="d-flex justify-content-between mb-1" style="color: #e74c3c;">
-                    <span>Extra's</span>
-                    <span>@ArrangementPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
-                </div>
-            }
-            <hr class="my-2" />
-            <div class="d-flex justify-content-between fw-bold fs-5">
-                <span>Totaal</span>
-                <span>@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
-            </div>
         </div>
 
         <button class="btn btn-pay" disabled="@(TotalTickets == 0)" @onclick="ShowPayment">
@@ -459,7 +447,7 @@ else
             </div>
 
             <div class="no-print mt-3 d-flex gap-2 justify-content-center">
-                <button class="btn btn-success btn-lg" @onclick="PrintTicket" style="padding: 12px 30px;">
+                <button class="btn btn-success btn-lg" @onclick="PrintCurrentTicket" style="padding: 12px 30px;">
                     Afdrukken
                 </button>
                 <button class="btn btn-outline-secondary btn-lg" @onclick="CloseTicket">
@@ -484,6 +472,7 @@ else
     private string? paymentError;
     private bool isProcessing;
     private bool showPaymentOverlay;
+    private bool showTicketOverlay;
 
     private int TotalTickets => counts.Values.Sum();
     private decimal TicketPrice => tariffs?.Sum(t => t.Price * GetCount(t.TariffId)) ?? 0;
@@ -585,7 +574,7 @@ else
                 var body = await reservationResponse.Content.ReadAsStringAsync();
                 paymentError = body.Contains("SOLD_OUT") ? "Uitverkocht! Geen stoelen meer beschikbaar."
                     : body.Contains("NO_ADJACENT") ? "Niet genoeg aaneengesloten stoelen beschikbaar."
-                    : "Reservering mislukt. Probeer opnieuw.";
+                    : $"Reservering mislukt ({reservationResponse.StatusCode}): {body}";
                 return;
             }
 
@@ -603,7 +592,8 @@ else
 
             if (!checkoutResponse.IsSuccessStatusCode)
             {
-                paymentError = "Betaling kon niet worden gestart. Probeer opnieuw.";
+                var stripeBody = await checkoutResponse.Content.ReadAsStringAsync();
+                paymentError = $"Stripe fout ({checkoutResponse.StatusCode}): {stripeBody}";
                 return;
             }
 
@@ -613,9 +603,9 @@ else
             // 3. Doorsturen naar Stripe betaalpagina
             Navigation.NavigateTo(result.Url, forceLoad: true);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            paymentError = "Er ging iets mis. Probeer opnieuw.";
+            paymentError = $"Er ging iets mis: {ex.Message}";
         }
         finally
         {
@@ -629,6 +619,16 @@ else
     {
         showPaymentOverlay = false;
         paymentError = null;
+    }
+
+    private void CloseTicket()
+    {
+        showTicketOverlay = false;
+    }
+
+    private async Task PrintCurrentTicket()
+    {
+        await JS.InvokeVoidAsync("window.print");
     }
 
     private async Task GoBack()
