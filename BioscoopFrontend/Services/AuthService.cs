@@ -2,13 +2,15 @@ using System.Net.Http.Json;
 
 namespace BioscoopFrontend.Services;
 
-public class AuthService(HttpClient http)
+public class AuthService(IHttpClientFactory httpClientFactory)
 {
+    private HttpClient Http => httpClientFactory.CreateClient("AuthClient");
+
     public async Task<bool> IsAuthenticatedAsync()
     {
         try
         {
-            var response = await http.GetAsync("/api/auth/me");
+            var response = await Http.GetAsync("/api/auth/me");
             return response.IsSuccessStatusCode;
         }
         catch
@@ -21,7 +23,7 @@ public class AuthService(HttpClient http)
     {
         try
         {
-            var response = await http.GetAsync("/api/auth/me");
+            var response = await Http.GetAsync("/api/auth/me");
             if (!response.IsSuccessStatusCode) return null;
 
             var data = await response.Content.ReadFromJsonAsync<MeResponse>();
@@ -39,3 +41,4 @@ public class AuthService(HttpClient http)
         public string? Role { get; set; }
     }
 }
+

@@ -13,11 +13,13 @@ namespace BackendAPI.Controllers
     {
         private readonly ApplicationDbContext context;
         private readonly IMovieQueryService _movieQueryService;
+        private readonly ITmdbService _tmdbService;
 
-        public MoviesController(ApplicationDbContext context, IMovieQueryService movieQueryService)
+        public MoviesController(ApplicationDbContext context, IMovieQueryService movieQueryService, ITmdbService tmdbService)
         {
             this.context = context;
             _movieQueryService = movieQueryService;
+            _tmdbService = tmdbService;
         }
 
         [HttpGet]
@@ -154,6 +156,18 @@ namespace BackendAPI.Controllers
                 return NotFound();
 
             return Ok(result);
+        }
+
+        // POST api/movies/import?pages=3
+        [HttpPost("import")]
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> ImportFromTmdb([FromQuery] int pages = 3, CancellationToken ct = default)
+        {
+            if (pages < 1) pages = 1;
+            if (pages > 10) pages = 10;
+
+            var count = await _tmdbService.ImportPopularMoviesAsync(pages, ct);
+            return Ok(new { imported = count, message = $"{count} film(s) toegevoegd vanuit TMDB." });
         }
     }
 }

@@ -9,16 +9,24 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped<CookieHandler>();
 
-builder.Services.AddScoped(sp =>
+// Default HttpClient – sends cookies for authenticated admin endpoints
+builder.Services.AddHttpClient("AuthClient", client =>
 {
-    var handler = sp.GetRequiredService<CookieHandler>();
-    handler.InnerHandler = new HttpClientHandler();
-    return new HttpClient(handler)
-    {
-        BaseAddress = new Uri("http://localhost:5033/")
-    };
+    client.BaseAddress = new Uri("https://localhost:7120/");
+}).AddHttpMessageHandler<CookieHandler>();
+
+// Public client – no credentials, used for anonymous endpoints like movies
+builder.Services.AddHttpClient("PublicClient", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7120/");
 });
+
+// @inject HttpClient Http ? uses the auth (credentialed) client for admin pages
+builder.Services.AddScoped(sp =>
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("AuthClient"));
 
 builder.Services.AddScoped<AuthService>();
 
 await builder.Build().RunAsync();
+
+
