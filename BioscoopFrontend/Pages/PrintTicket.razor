@@ -1,0 +1,60 @@
+﻿@page "/printticket"
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components
+@inject IJSRuntime JS
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? movie { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? date { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? time { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? seats { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? code { get; set; }
+
+    private async Task PrintPage()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+}
+
+<div class="ticket-overlay">
+    <div class="ticket" role="region" aria-label="Ticket summary">
+        <div class="ticket-header">
+            <h2>Ticket</h2>
+            <p class="no-print"><button class="btn btn-primary" @onclick="PrintPage">Print ticket</button></p>
+        </div>
+
+        <table class="ticket-table">
+            <tr>
+                <th>Film</th>
+                <td>@(movie ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Datum</th>
+                <td>@(date ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Tijd</th>
+                <td>@(time ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Stoelen</th>
+                <td>@(seats ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Ordercode</th>
+                <td class="ticket-barcode">@(code ?? "-")</td>
+            </tr>
+        </table>
+
+        <p>Toon deze pagina bij binnenkomst in de zaal.</p>
+    </div>
+</div>
