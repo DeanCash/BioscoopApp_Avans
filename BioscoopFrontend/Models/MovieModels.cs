@@ -4,6 +4,10 @@ public class UpcomingMovieDto
 {
     public Guid MovieId { get; set; }
     public string Title { get; set; } = "";
+    public string? Description { get; set; }
+    public string Genre { get; set; } = "";
+    public int Age { get; set; }
+    public int DurationMinutes { get; set; }
     public string? ImageUrl { get; set; }
     public DateTimeOffset FirstScreeningAtUtc { get; set; }
     public List<UpcomingScreeningDto> Screenings { get; set; } = new();
@@ -114,7 +118,10 @@ public class ReservationGroupResponseDto
     public DateTimeOffset StartTimeUtc { get; set; }
     public string Status { get; set; } = "";
     public decimal TotalAmount { get; set; }
+    public decimal TicketAmount { get; set; }
+    public decimal ArrangementAmount { get; set; }
     public List<ReservationSeatDto> Seats { get; set; } = new();
+    public List<ArrangementItemDto> Arrangements { get; set; } = new();
 }
 
 public class ReservationSeatDto
@@ -130,4 +137,25 @@ public class SeatAvailabilityDto
     public string RowLabel { get; set; } = "";
     public int SeatNumber { get; set; }
     public bool IsReserved { get; set; }
+}
+
+// Arrangement DTOs voor horeca
+public class ArrangementDto
+{
+    public Guid ArrangementId { get; set; }
+    public string Name { get; set; } = "";
+    public string? Description { get; set; }
+    public string Category { get; set; } = "";
+    public decimal Price { get; set; }
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public class ArrangementItemDto
+{
+    public Guid ArrangementId { get; set; }
+    public string Name { get; set; } = "";
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal LineTotal { get; set; }
 }

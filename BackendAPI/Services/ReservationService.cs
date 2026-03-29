@@ -1,4 +1,5 @@
 using API.Services;
+using BackendAPI.Models.Arrangement;
 using BackendAPI.Models.Order;
 using BackendAPI.Models.Reservation;
 using BackendAPI.Models.Seat;
@@ -15,8 +16,13 @@ namespace BackendAPI.Services
             _db = db;
         }
 
-        public async Task<ReservationGroupResponseDto?> ReserveAsync(Guid screeningId, List<TicketLineDto> tickets)
+        public async Task<ReservationGroupResponseDto?> ReserveAsync(
+            Guid screeningId,
+            List<TicketLineDto> tickets,
+            List<ArrangementLineDto>? arrangements = null)
         {
+            arrangements ??= new List<ArrangementLineDto>();
+
             var screening = await _db.Screenings
                 .Include(s => s.Movie)
                 .Include(s => s.Hall)
@@ -41,6 +47,23 @@ namespace BackendAPI.Services
 
                 for (int i = 0; i < line.Count; i++)
                     ticketList.Add((line.TariffId, tariff.Price));
+            }
+
+            // Look up arrangement prices
+            var arrangementIds = arrangements.Select(a => a.ArrangementId).Distinct().ToHashSet();
+            var arrangementModels = await _db.Arrangements
+                .Where(a => arrangementIds.Contains(a.ArrangementId) && a.IsActive)
+                .ToDictionaryAsync(a => a.ArrangementId);
+
+            // Validate arrangements
+            var arrangementLines = new List<(Guid ArrangementId, string Name, int Quantity, decimal UnitPrice, decimal LineTotal)>();
+            foreach (var line in arrangements)
+            {
+                if (!arrangementModels.TryGetValue(line.ArrangementId, out var arrangement))
+                    throw new InvalidOperationException("INVALID_ARRANGEMENT");
+
+                var lineTotal = arrangement.Price * line.Quantity;
+                arrangementLines.Add((line.ArrangementId, arrangement.Name, line.Quantity, arrangement.Price, lineTotal));
             }
 
             int numberOfSeats = ticketList.Count;
@@ -86,6 +109,11 @@ namespace BackendAPI.Services
 
             var printCode = Guid.NewGuid().ToString("N")[..6].ToUpper();
             var orders = new List<OrderModel>();
+            var orderArrangements = new List<OrderArrangementModel>();
+
+            // Calculate totals
+            var ticketTotal = ticketList.Sum(t => t.Price);
+            var arrangementTotal = arrangementLines.Sum(a => a.LineTotal);
 
             for (int i = 0; i < bestWindow.Count; i++)
             {
@@ -107,6 +135,28 @@ namespace BackendAPI.Services
                 _db.Orders.Add(order);
             }
 
+            // Add arrangements to the first order (they belong to the group)
+            if (orders.Count > 0 && arrangementLines.Count > 0)
+            {
+                var firstOrder = orders[0];
+                foreach (var arrLine in arrangementLines)
+                {
+                    var orderArrangement = new OrderArrangementModel
+                    {
+                        OrderArrangementId = Guid.NewGuid(),
+                        OrderId = firstOrder.OrderId,
+                        ArrangementId = arrLine.ArrangementId,
+                        Quantity = arrLine.Quantity,
+                        UnitPrice = arrLine.UnitPrice,
+                        LineTotal = arrLine.LineTotal
+                    };
+                    orderArrangements.Add(orderArrangement);
+                    _db.OrderArrangements.Add(orderArrangement);
+                }
+                // Add arrangement total to first order
+                firstOrder.TotalAmount += arrangementTotal;
+            }
+
             try
             {
                 await _db.SaveChangesAsync();
@@ -118,7 +168,7 @@ namespace BackendAPI.Services
                 foreach (var order in orders)
                     _db.Entry(order).State = EntityState.Detached;
 
-                return await ReserveAsync(screeningId, tickets);
+                return await ReserveAsync(screeningId, tickets, arrangements);
             }
 
             return new ReservationGroupResponseDto
@@ -127,12 +177,22 @@ namespace BackendAPI.Services
                 MovieTitle = screening.Movie.Title,
                 HallNumber = screening.Hall.Number,
                 Status = "reserved",
-                TotalAmount = ticketList.Sum(t => t.Price),
+                TotalAmount = ticketTotal + arrangementTotal,
+                TicketAmount = ticketTotal,
+                ArrangementAmount = arrangementTotal,
                 Seats = bestWindow.Select((seat, i) => new ReservationSeatDto
                 {
                     OrderId = orders[i].OrderId,
                     RowLabel = seat.RowLabel,
                     SeatNumber = seat.SeatNumber,
+                }).ToList(),
+                Arrangements = arrangementLines.Select(a => new ArrangementItemDto
+                {
+                    ArrangementId = a.ArrangementId,
+                    Name = a.Name,
+                    Quantity = a.Quantity,
+                    UnitPrice = a.UnitPrice,
+                    LineTotal = a.LineTotal,
                 }).ToList(),
             };
         }

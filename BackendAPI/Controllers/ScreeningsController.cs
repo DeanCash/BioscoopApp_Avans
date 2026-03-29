@@ -38,6 +38,7 @@ namespace BackendAPI.Controllers
             }
 
             var screenings = q
+                .ToList()
                 .OrderBy(s => s.StartTimeUtc)
                 .ToList();
 
@@ -52,6 +53,7 @@ namespace BackendAPI.Controllers
                 .AsNoTracking()
                 .Include(s => s.Movie)
                 .Include(s => s.Hall)
+                .ToList()
                 .OrderBy(s => s.StartTimeUtc)
                 .Select(s => new
                 {

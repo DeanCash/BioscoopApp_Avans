@@ -7,6 +7,10 @@ namespace BackendAPI.DTOs.Movies
     {
         public Guid MovieId { get; init; }
         public string Title { get; init; } = default!;
+        public string? Description { get; init; }
+        public string Genre { get; init; } = default!;
+        public int Age { get; init; }
+        public int DurationMinutes { get; init; }
         public string? ImageUrl { get; init; }
         public DateTimeOffset FirstScreeningAtUtc { get; init; }
         public IReadOnlyList<UpcomingScreeningDto> Screenings { get; init; } = Array.Empty<UpcomingScreeningDto>();

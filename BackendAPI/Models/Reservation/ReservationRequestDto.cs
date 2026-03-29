@@ -9,6 +9,8 @@ namespace BackendAPI.Models.Reservation
 
         [Required]
         public List<TicketLineDto> Tickets { get; set; } = new();
+
+        public List<ArrangementLineDto> Arrangements { get; set; } = new();
     }
 
     public class TicketLineDto
@@ -20,6 +22,15 @@ namespace BackendAPI.Models.Reservation
         public int Count { get; set; }
     }
 
+    public class ArrangementLineDto
+    {
+        [Required]
+        public Guid ArrangementId { get; set; }
+
+        [Range(1, 20)]
+        public int Quantity { get; set; } = 1;
+    }
+    
     public class WebsiteReservationRequestDto
     {
         [Required]

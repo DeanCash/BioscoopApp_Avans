@@ -9,13 +9,13 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped<CookieHandler>();
 
-// Default HttpClient – sends cookies for authenticated admin endpoints
+// Default HttpClient ï¿½ sends cookies for authenticated admin endpoints
 builder.Services.AddHttpClient("AuthClient", client =>
 {
     client.BaseAddress = new Uri("https://localhost:7120/");
 }).AddHttpMessageHandler<CookieHandler>();
 
-// Public client – no credentials, used for anonymous endpoints like movies
+// Public client ï¿½ no credentials, used for anonymous endpoints like movies
 builder.Services.AddHttpClient("PublicClient", client =>
 {
     client.BaseAddress = new Uri("https://localhost:7120/");
@@ -28,5 +28,3 @@ builder.Services.AddScoped(sp =>
 builder.Services.AddScoped<AuthService>();
 
 await builder.Build().RunAsync();
-
-
