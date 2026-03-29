@@ -7,16 +7,9 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddScoped<CookieHandler>();
-
-builder.Services.AddScoped(sp =>
+builder.Services.AddScoped(sp => new HttpClient
 {
-    var handler = sp.GetRequiredService<CookieHandler>();
-    handler.InnerHandler = new HttpClientHandler();
-    return new HttpClient(handler)
-    {
-        BaseAddress = new Uri("http://localhost:5033/")
-    };
+    BaseAddress = new Uri("http://localhost:5033/")
 });
 
 builder.Services.AddScoped<AuthService>();

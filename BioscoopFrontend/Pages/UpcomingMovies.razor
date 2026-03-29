@@ -65,11 +65,94 @@
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         color: white;
     }
+    .search-filters {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    .filter-btn {
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 0.9rem;
+        margin: 3px;
+        transition: all 0.2s;
+    }
+    .filter-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: transparent;
+        color: white;
+    }
+    .movie-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+    }
+    .age-badge {
+        background: #e74c3c;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
 </style>
 
 <div class="page-header">
     <h1>Eerstkomende Films</h1>
     <p>Kies een film en boek je tickets</p>
+</div>
+
+@* ── Zoek en Filter sectie ── *@
+<div class="search-filters">
+    <div class="row g-3 align-items-center">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <span>🔍</span>
+                </span>
+                <input type="text" class="form-control border-start-0" placeholder="Zoek op titel..."
+                       @bind="searchQuery" @bind:event="oninput" />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="selectedGenre">
+                <option value="">Alle genres</option>
+                @foreach (var genre in AvailableGenres)
+                {
+                    <option value="@genre">@genre</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="selectedAge">
+                <option value="0">Alle leeftijden</option>
+                <option value="6">6+</option>
+                <option value="9">9+</option>
+                <option value="12">12+</option>
+                <option value="16">16+</option>
+                <option value="18">18+</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-secondary w-100" @onclick="ClearFilters">
+                Wis filters
+            </button>
+        </div>
+    </div>
+
+    @if (FilteredMovies != null)
+    {
+        <div class="mt-3 text-muted">
+            <small>@FilteredMovies.Count van @movies?.Count films gevonden</small>
+        </div>
+    }
 </div>
 
 @if (movies == null)
@@ -92,25 +175,43 @@ else if (movies.Count == 0)
         <p>Er zijn momenteel geen films gepland voor de komende 14 dagen.</p>
     </div>
 }
+else if (FilteredMovies.Count == 0)
+{
+    <div class="alert alert-info text-center">
+        <h4>Geen films gevonden</h4>
+        <p>Probeer andere zoektermen of filters.</p>
+        <button class="btn btn-primary" @onclick="ClearFilters">Wis alle filters</button>
+    </div>
+}
 else
 {
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        @foreach (var movie in movies)
+        @foreach (var movie in FilteredMovies)
         {
             <div class="col">
                 <div class="card movie-card h-100 shadow" @onclick="() => GoToDetails(movie.MovieId)">
-                    @if (!string.IsNullOrEmpty(movie.ImageUrl))
-                    {
-                        <img src="@movie.ImageUrl" class="movie-poster" alt="@movie.Title poster" />
-                    }
-                    else
-                    {
-                        <div class="movie-poster-placeholder">
-                            <span>🎬</span>
-                        </div>
-                    }
+                    <div style="position: relative;">
+                        @if (!string.IsNullOrEmpty(movie.ImageUrl))
+                        {
+                            <img src="@movie.ImageUrl" class="movie-poster" alt="@movie.Title poster" />
+                        }
+                        else
+                        {
+                            <div class="movie-poster-placeholder">
+                                <span>🎬</span>
+                            </div>
+                        }
+                        <span class="movie-badge">@movie.Genre</span>
+                    </div>
                     <div class="card-body text-center">
-                        <h5 class="card-title mb-3">@movie.Title</h5>
+                        <h5 class="card-title mb-2">@movie.Title</h5>
+                        <div class="mb-2">
+                            <span class="age-badge">@movie.Age+</span>
+                            <small class="text-muted ms-2">@movie.DurationMinutes min</small>
+                        </div>
+                        <small class="text-muted d-block mb-3">
+                            @movie.FirstScreeningAtUtc.LocalDateTime.ToString("ddd d MMM HH:mm")
+                        </small>
                         <button class="btn btn-details">
                             Bekijk details
                         </button>
@@ -125,6 +226,51 @@ else
     private List<UpcomingMovieDto>? movies;
     private string? loadError;
 
+    // Filter state
+    private string searchQuery = "";
+    private string selectedGenre = "";
+    private int selectedAge = 0;
+
+    // Beschikbare genres uit de films
+    private List<string> AvailableGenres => movies?
+        .Select(m => m.Genre)
+        .Where(g => !string.IsNullOrEmpty(g))
+        .Distinct()
+        .OrderBy(g => g)
+        .ToList() ?? new();
+
+    // Gefilterde films
+    private List<UpcomingMovieDto> FilteredMovies
+    {
+        get
+        {
+            if (movies == null) return new();
+
+            var filtered = movies.AsEnumerable();
+
+            // Zoeken op titel
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                filtered = filtered.Where(m =>
+                    m.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Filter op genre
+            if (!string.IsNullOrEmpty(selectedGenre))
+            {
+                filtered = filtered.Where(m => m.Genre == selectedGenre);
+            }
+
+            // Filter op leeftijd (toon films geschikt voor geselecteerde leeftijd)
+            if (selectedAge > 0)
+            {
+                filtered = filtered.Where(m => m.Age <= selectedAge);
+            }
+
+            return filtered.ToList();
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -136,6 +282,13 @@ else
             loadError = $"Kon films niet ophalen: {ex.Message}";
             movies = [];
         }
+    }
+
+    private void ClearFilters()
+    {
+        searchQuery = "";
+        selectedGenre = "";
+        selectedAge = 0;
     }
 
     private void GoToDetails(Guid movieId)

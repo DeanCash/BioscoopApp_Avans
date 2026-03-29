@@ -87,11 +87,52 @@ else
             </div>
         }
 
+        @* ── Arrangementen sectie ── *@
+        @if (arrangements != null && arrangements.Any())
+        {
+            <div class="mt-4">
+                <h5 class="fw-bold mb-3" style="color: #e74c3c;">Extra's & Arrangementen</h5>
+
+                @foreach (var category in ArrangementsByCategory)
+                {
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">@GetCategoryDisplayName(category.Key)</h6>
+                        @foreach (var arr in category.Value)
+                        {
+                            <div class="tariff-card d-flex justify-content-between align-items-center p-3 mb-2" style="background: linear-gradient(135deg, #fff5f5 0%, #fff 100%); border-left: 4px solid #e74c3c;">
+                                <div>
+                                    <div class="tariff-name fw-bold">@arr.Name</div>
+                                    @if (!string.IsNullOrEmpty(arr.Description))
+                                    {
+                                        <small class="text-muted">@arr.Description</small>
+                                    }
+                                    <div class="tariff-price" style="color: #e74c3c; font-weight: 600;">@arr.Price.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</div>
+                                </div>
+                                <div class="counter d-flex align-items-center gap-2">
+                                    <button class="btn btn-counter" style="background: #e74c3c; color: white;" @onclick="() => DecrementArrangement(arr.ArrangementId)" disabled="@(GetArrangementCount(arr.ArrangementId) == 0)">−</button>
+                                    <span class="count-display fw-bold">@GetArrangementCount(arr.ArrangementId)</span>
+                                    <button class="btn btn-counter" style="background: #e74c3c; color: white;" @onclick="() => IncrementArrangement(arr.ArrangementId)">+</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
         <div class="summary mt-4 p-3">
             <div class="d-flex justify-content-between mb-1">
-                <span>Tickets</span>
-                <span>@TotalTickets</span>
+                <span>Tickets (@TotalTickets)</span>
+                <span>@TicketPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
             </div>
+            @if (ArrangementPrice > 0)
+            {
+                <div class="d-flex justify-content-between mb-1" style="color: #e74c3c;">
+                    <span>Extra's</span>
+                    <span>@ArrangementPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
+                </div>
+            }
+            <hr class="my-2" />
             <div class="d-flex justify-content-between fw-bold fs-5">
                 <span>Totaal</span>
                 <span>@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
@@ -138,6 +179,18 @@ else
                     <th>Tickets</th>
                     <td>@TotalTickets</td>
                 </tr>
+                @if (ArrangementPrice > 0)
+                {
+                    <tr>
+                        <th>Extra's</th>
+                        <td>
+                            @foreach (var arr in arrangements!.Where(a => GetArrangementCount(a.ArrangementId) > 0))
+                            {
+                                <div>@GetArrangementCount(arr.ArrangementId)x @arr.Name</div>
+                            }
+                        </td>
+                    </tr>
+                }
                 <tr>
                     <th>Bedrag</th>
                     <td><strong style="font-size: 1.3rem; color: #28a745;">@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
@@ -218,6 +271,18 @@ else
                         </strong>
                     </td>
                 </tr>
+                @if (reservation.Arrangements != null && reservation.Arrangements.Any())
+                {
+                    <tr>
+                        <th>Extra's</th>
+                        <td>
+                            @foreach (var arr in reservation.Arrangements)
+                            {
+                                <div><span class="badge bg-danger me-1">@arr.Quantity x</span> @arr.Name</div>
+                            }
+                        </td>
+                    </tr>
+                }
                 <tr>
                     <th>Bedrag</th>
                     <td><strong>@reservation.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
@@ -255,9 +320,11 @@ else
     public Guid ScreeningId { get; set; }
 
     private List<TariffDto>? tariffs;
+    private List<ArrangementDto>? arrangements;
     private ScreeningResponseDto? screening;
     private ReservationGroupResponseDto? reservation;
     private Dictionary<Guid, int> counts = new();
+    private Dictionary<Guid, int> arrangementCounts = new();
     private string? errorMessage;
     private string? paymentError;
     private bool isProcessing;
@@ -265,7 +332,36 @@ else
     private bool showTicketOverlay;
 
     private int TotalTickets => counts.Values.Sum();
-    private decimal TotalPrice => tariffs?.Sum(t => t.Price * GetCount(t.TariffId)) ?? 0;
+    private decimal TicketPrice => tariffs?.Sum(t => t.Price * GetCount(t.TariffId)) ?? 0;
+    private decimal ArrangementPrice => arrangements?.Sum(a => a.Price * GetArrangementCount(a.ArrangementId)) ?? 0;
+    private decimal TotalPrice => TicketPrice + ArrangementPrice;
+
+    // Groepeer arrangementen per categorie
+    private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
+        arrangements?.GroupBy(a => a.Category).ToDictionary(g => g.Key, g => g.ToList()) ?? new();
+
+    private string GetCategoryDisplayName(string category) => category switch
+    {
+        "Popcorn" => "Popcorn",
+        "Drank" => "Drankjes",
+        "Snack" => "Snacks",
+        "ComboPackage" => "Combo Deals",
+        "HorecaSpecial" => "Specials",
+        _ => category
+    };
+
+    private int GetArrangementCount(Guid id) => arrangementCounts.TryGetValue(id, out var c) ? c : 0;
+
+    private void IncrementArrangement(Guid id)
+    {
+        arrangementCounts[id] = GetArrangementCount(id) + 1;
+    }
+
+    private void DecrementArrangement(Guid id)
+    {
+        var current = GetArrangementCount(id);
+        if (current > 0) arrangementCounts[id] = current - 1;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -273,11 +369,13 @@ else
         {
             var tariffTask = Http.GetFromJsonAsync<List<TariffDto>>("api/tariffs");
             var screeningTask = Http.GetFromJsonAsync<ScreeningResponseDto>($"api/screenings/{ScreeningId}");
+            var arrangementTask = Http.GetFromJsonAsync<List<ArrangementDto>>("api/arrangements");
 
-            await Task.WhenAll(tariffTask, screeningTask);
+            await Task.WhenAll(tariffTask, screeningTask, arrangementTask);
 
             tariffs = tariffTask.Result;
             screening = screeningTask.Result;
+            arrangements = arrangementTask.Result;
         }
         catch (HttpRequestException)
         {
@@ -319,6 +417,10 @@ else
                 Tickets = counts
                     .Where(kv => kv.Value > 0)
                     .Select(kv => new { TariffId = kv.Key, Count = kv.Value })
+                    .ToList(),
+                Arrangements = arrangementCounts
+                    .Where(kv => kv.Value > 0)
+                    .Select(kv => new { ArrangementId = kv.Key, Quantity = kv.Value })
                     .ToList()
             };
 

@@ -21,7 +21,7 @@ namespace BackendAPI.Controllers
             try
             {
                 var result = await _reservationService.ReserveAsync(
-                    request.ScreeningId, request.Tickets);
+                    request.ScreeningId, request.Tickets, request.Arrangements);
 
                 if (result == null)
                     return NotFound("Screening not found");
@@ -35,6 +35,10 @@ namespace BackendAPI.Controllers
             catch (InvalidOperationException ex) when (ex.Message == "NO_ADJACENT_SEATS")
             {
                 return Conflict("Not enough adjacent seats available for this screening");
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "INVALID_ARRANGEMENT")
+            {
+                return BadRequest("One or more arrangements are invalid or inactive");
             }
         }
     }

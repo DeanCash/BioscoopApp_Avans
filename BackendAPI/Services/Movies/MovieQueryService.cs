@@ -62,6 +62,10 @@ public sealed class MovieQueryService : IMovieQueryService
                 {
                     MovieId = movie.MovieId,
                     Title = movie.Title,
+                    Description = movie.Description,
+                    Genre = movie.Genre,
+                    Age = movie.Age,
+                    DurationMinutes = movie.DurationMinutes,
                     ImageUrl = movie.ImageUrl,
                     FirstScreeningAtUtc = g.Min(x => x.StartTimeUtc),
                     Screenings = g

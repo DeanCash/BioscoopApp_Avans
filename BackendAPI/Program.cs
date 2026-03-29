@@ -30,11 +30,10 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    // If on "MacOS"
+    // If on "MacOS" - use SQLite for easier development
     if (OperatingSystem.IsMacOS())
     {
-        var connectionString = builder.Configuration.GetConnectionString("MySqlConnection");
-        options.UseMySQL(connectionString);
+        options.UseSqlite("Data Source=cinema.db");
     }
     // If on "Windows"
     else
@@ -84,7 +83,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    //DbSeeder.Seed(db);
+    db.Database.EnsureCreated();
+    DbSeeder.Seed(db);
     SeedUsers(db);
 }
 

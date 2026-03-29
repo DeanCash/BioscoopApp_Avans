@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using BackendAPI.Models.Arrangement;
 using BackendAPI.Models.Seat;
 using BackendAPI.Models.Screening;
 using BackendAPI.Models.Tariff;
@@ -29,5 +30,6 @@ namespace BackendAPI.Models.Order
         public ScreeningModel Screening { get; set; } = null!;
         public SeatModel? Seat { get; set; }
         public TariffModel? Tariff { get; set; }
+        public ICollection<OrderArrangementModel> OrderArrangements { get; set; } = new List<OrderArrangementModel>();
     }
 }

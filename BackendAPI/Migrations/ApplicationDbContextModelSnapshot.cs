@@ -15,24 +15,85 @@ namespace BackendAPI.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
+
+            modelBuilder.Entity("BackendAPI.Models.Arrangement.ArrangementModel", b =>
+                {
+                    b.Property<Guid>("ArrangementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ArrangementId");
+
+                    b.ToTable("Arrangements");
+                });
+
+            modelBuilder.Entity("BackendAPI.Models.Arrangement.OrderArrangementModel", b =>
+                {
+                    b.Property<Guid>("OrderArrangementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ArrangementId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("OrderArrangementId");
+
+                    b.HasIndex("ArrangementId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderArrangements");
+                });
 
             modelBuilder.Entity("BackendAPI.Models.Hall.HallModel", b =>
                 {
                     b.Property<Guid>("HallId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetime");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("LayoutType")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Number")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("HallId");
 
@@ -43,24 +104,31 @@ namespace BackendAPI.Migrations
                 {
                     b.Property<Guid>("MovieId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Age")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetime");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("DurationMinutes")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Genre")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("MovieId");
 
@@ -71,45 +139,50 @@ namespace BackendAPI.Migrations
                 {
                     b.Property<Guid>("OrderId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetime");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset?>("PaidAtUtc")
-                        .HasColumnType("datetime");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("PrintCode")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset?>("PrintedAtUtc")
-                        .HasColumnType("datetime");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("ScreeningId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid?>("SeatId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("TariffId")
+                        .HasColumnType("TEXT");
 
                     b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("OrderId");
 
                     b.HasIndex("SeatId");
+
+                    b.HasIndex("TariffId");
 
                     b.HasIndex("ScreeningId", "SeatId")
                         .IsUnique();
@@ -121,19 +194,19 @@ namespace BackendAPI.Migrations
                 {
                     b.Property<Guid>("ScreeningId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetime");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("HallId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("MovieId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("StartTimeUtc")
-                        .HasColumnType("datetime");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("ScreeningId");
 
@@ -148,17 +221,17 @@ namespace BackendAPI.Migrations
                 {
                     b.Property<Guid>("SeatId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("HallId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("RowLabel")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("SeatNumber")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("SeatId");
 
@@ -171,18 +244,21 @@ namespace BackendAPI.Migrations
                 {
                     b.Property<Guid>("TariffId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("SortOrder")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("TariffType")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("TariffId");
 
@@ -192,22 +268,41 @@ namespace BackendAPI.Migrations
             modelBuilder.Entity("BackendAPI.Models.User.UserModel", b =>
                 {
                     b.Property<string>("Username")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Username");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("BackendAPI.Models.Arrangement.OrderArrangementModel", b =>
+                {
+                    b.HasOne("BackendAPI.Models.Arrangement.ArrangementModel", "Arrangement")
+                        .WithMany()
+                        .HasForeignKey("ArrangementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BackendAPI.Models.Order.OrderModel", "Order")
+                        .WithMany("OrderArrangements")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Arrangement");
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("BackendAPI.Models.Order.OrderModel", b =>
@@ -223,9 +318,15 @@ namespace BackendAPI.Migrations
                         .HasForeignKey("SeatId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("BackendAPI.Models.Tariff.TariffModel", "Tariff")
+                        .WithMany()
+                        .HasForeignKey("TariffId");
+
                     b.Navigation("Screening");
 
                     b.Navigation("Seat");
+
+                    b.Navigation("Tariff");
                 });
 
             modelBuilder.Entity("BackendAPI.Models.Screening.ScreeningModel", b =>
@@ -268,6 +369,11 @@ namespace BackendAPI.Migrations
             modelBuilder.Entity("BackendAPI.Models.Movie.MovieModel", b =>
                 {
                     b.Navigation("Screenings");
+                });
+
+            modelBuilder.Entity("BackendAPI.Models.Order.OrderModel", b =>
+                {
+                    b.Navigation("OrderArrangements");
                 });
 #pragma warning restore 612, 618
         }

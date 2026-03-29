@@ -1,4 +1,5 @@
-﻿using BackendAPI.Models.Hall;
+﻿using BackendAPI.Models.Arrangement;
+using BackendAPI.Models.Hall;
 using BackendAPI.Models.Movie;
 using BackendAPI.Models.Order;
 using BackendAPI.Models.Screening;
@@ -15,9 +16,11 @@ namespace API.Services
         {
         }
 
+        public DbSet<ArrangementModel> Arrangements { get; set; }
         public DbSet<HallModel> Halls { get; set; }
         public DbSet<MovieModel> Movies { get; set; }
         public DbSet<OrderModel> Orders { get; set; }
+        public DbSet<OrderArrangementModel> OrderArrangements { get; set; }
         public DbSet<ScreeningModel> Screenings { get; set; }
         public DbSet<SeatModel> Seats { get; set; }
         public DbSet<TariffModel> Tariffs { get; set; }
@@ -43,6 +46,19 @@ namespace API.Services
             modelBuilder.Entity<OrderModel>()
                 .HasIndex(o => new { o.ScreeningId, o.SeatId })
                 .IsUnique();
+
+            // OrderArrangement configuratie
+            modelBuilder.Entity<OrderArrangementModel>()
+                .HasOne(oa => oa.Order)
+                .WithMany(o => o.OrderArrangements)
+                .HasForeignKey(oa => oa.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OrderArrangementModel>()
+                .HasOne(oa => oa.Arrangement)
+                .WithMany()
+                .HasForeignKey(oa => oa.ArrangementId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
