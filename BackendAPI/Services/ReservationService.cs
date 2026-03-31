@@ -225,9 +225,10 @@ namespace BackendAPI.Services
             if (hallSeatDict.Count != requestedSeatIds.Count)
                 throw new InvalidOperationException("INVALID_SEATS");
 
-            // Check none are already reserved
+            // Check none are already reserved (exclude pending/unpaid orders)
             var reservedSeatIds = await _db.Orders
-                .Where(o => o.ScreeningId == screeningId && o.SeatId != null)
+                .Where(o => o.ScreeningId == screeningId && o.SeatId != null
+                    && o.PaymentStatus != "pending")
                 .Select(o => o.SeatId)
                 .ToListAsync();
 

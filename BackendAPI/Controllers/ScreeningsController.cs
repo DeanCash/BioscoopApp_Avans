@@ -134,7 +134,8 @@ namespace BackendAPI.Controllers
 
             var reservedSeatIds = context.Orders
                 .AsNoTracking()
-                .Where(o => o.ScreeningId == id && o.SeatId != null)
+                .Where(o => o.ScreeningId == id && o.SeatId != null
+                    && o.PaymentStatus != "pending")
                 .Select(o => o.SeatId)
                 .ToHashSet();
 

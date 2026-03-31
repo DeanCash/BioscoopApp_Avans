@@ -2,6 +2,7 @@ using API.Services;
 using BackendAPI.Services.Movies;
 using BackendAPI.Services;
 using BackendAPI.Services.Newsletter;
+using BackendAPI.Services.Stripe;
 using BackendAPI.Models.User;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -47,9 +48,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
             s.EnableRetryOnFailure(3);
         });
     }
+
+    options.ConfigureWarnings(w =>
+        w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 });
 
 builder.Services.AddScoped<ReservationService>();
+builder.Services.AddScoped<IStripeSessionFetcher, StripeSessionFetcher>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>

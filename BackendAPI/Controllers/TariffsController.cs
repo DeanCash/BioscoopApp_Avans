@@ -67,6 +67,7 @@ namespace BackendAPI.Controllers
                 TariffType = tariffDto.TariffType,
                 DisplayName = tariffDto.DisplayName,
                 SortOrder = tariffDto.SortOrder,
+                Price = tariffDto.Price,
             };
 
             context.Tariffs.Add(tariff);
@@ -96,6 +97,7 @@ namespace BackendAPI.Controllers
             movie.TariffType = tariffDto.TariffType;
             movie.DisplayName = tariffDto.DisplayName;
             movie.SortOrder = tariffDto.SortOrder;
+            movie.Price = tariffDto.Price;
 
             context.SaveChanges();
 

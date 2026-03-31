@@ -2,6 +2,7 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@using System.Web
 
 <PageTitle>Tickets Kiezen</PageTitle>
 
@@ -216,6 +217,40 @@ else if (tariffs == null)
 else
 {
     <div class="container" style="max-width: 600px;">
+        @if (isSecretMode)
+        {
+            <div class="text-center p-4 mb-3" style="background: linear-gradient(135deg, #fff0fc 0%, #fff 100%); border-radius: 16px; border: 2px solid #f5576c; box-shadow: 0 4px 16px rgba(245,87,108,0.1);">
+                <div style="font-size: 3.5rem; margin-bottom: 12px;">&#127917;</div>
+                <h4 style="color: #1a1a2e; font-weight: 700;">Secret Movie</h4>
+                <p class="text-muted mb-1">Je weet niet welke film je gaat zien &mdash; een echte verrassing!</p>
+                <p style="font-size: 1.2rem; font-weight: 700; color: #f5576c;">&euro;2,50 per ticket</p>
+            </div>
+
+            <div class="tariff-card d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="tariff-name">&#127917; Secret Movie</div>
+                    <div class="tariff-price">&euro;2,50 per ticket</div>
+                </div>
+                <div class="counter d-flex align-items-center gap-2">
+                    <button class="btn btn-counter" @onclick="DecrementSecret" disabled="@(secretCount == 0)">&#8722;</button>
+                    <span class="count-display fw-bold">@secretCount</span>
+                    <button class="btn btn-counter" @onclick="IncrementSecret">+</button>
+                </div>
+            </div>
+
+            <div class="summary mt-4 p-3">
+                <div class="d-flex justify-content-between fw-bold fs-5">
+                    <span>Totaal (@secretCount tickets)</span>
+                    <span>@SecretTotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
+                </div>
+            </div>
+
+            <button class="btn btn-pay" disabled="@(secretCount == 0)" @onclick="ShowPayment">
+                Doorgaan &rarr;
+            </button>
+        }
+        else
+        {
         @foreach (var tariff in tariffs)
         {
             <div class="tariff-card d-flex justify-content-between align-items-center">
@@ -286,6 +321,7 @@ else
         <button class="btn btn-pay" disabled="@(TotalTickets == 0)" @onclick="ShowPayment">
             Doorgaan &rarr;
         </button>
+        }
     </div>
 }
 
@@ -299,7 +335,7 @@ else
             <table class="ticket-table">
                 <tr>
                     <th>Film</th>
-                    <td><strong>@screening?.Movie?.Title</strong></td>
+                    <td><strong>@(isSecretMode ? "&#127917; Secret Movie" : screening?.Movie?.Title)</strong></td>
                 </tr>
                 <tr>
                     <th>Datum</th>
@@ -319,7 +355,7 @@ else
                 </tr>
                 <tr>
                     <th>Tickets</th>
-                    <td>@TotalTickets</td>
+                    <td>@(isSecretMode ? secretCount : TotalTickets)</td>
                 </tr>
                 @if (ArrangementPrice > 0)
                 {
@@ -335,7 +371,7 @@ else
                 }
                 <tr>
                     <th>Bedrag</th>
-                    <td><strong style="font-size: 1.3rem; color: #27ae60;">@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
+                    <td><strong style="font-size: 1.3rem; color: #27ae60;">@((isSecretMode ? SecretTotalPrice : TotalPrice).ToString("C2", new System.Globalization.CultureInfo("nl-NL")))</strong></td>
                 </tr>
             </table>
             <hr style="border-color: #eee; margin: 10px 0;" />
@@ -473,7 +509,11 @@ else
     private bool isProcessing;
     private bool showPaymentOverlay;
     private bool showTicketOverlay;
+    private bool isSecretMode;
+    private int secretCount;
+    private const decimal SecretMoviePrice = 2.50m;
 
+    private decimal SecretTotalPrice => secretCount * SecretMoviePrice;
     private int TotalTickets => counts.Values.Sum();
     private decimal TicketPrice => tariffs?.Sum(t => t.Price * GetCount(t.TariffId)) ?? 0;
     private decimal ArrangementPrice => arrangements?.Sum(a => a.Price * GetArrangementCount(a.ArrangementId)) ?? 0;
@@ -508,6 +548,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        var uri = new Uri(Navigation.Uri);
+        var query = HttpUtility.ParseQueryString(uri.Query);
+        isSecretMode = query["secret"] == "true";
+
         try
         {
             var tariffTask = Http.GetFromJsonAsync<List<TariffDto>>("api/tariffs");
@@ -539,6 +583,9 @@ else
         if (current > 0) counts[tariffId] = current - 1;
     }
 
+    private void IncrementSecret() => secretCount++;
+    private void DecrementSecret() { if (secretCount > 0) secretCount--; }
+
     private void ShowPayment()
     {
         if (TotalTickets == 0) return;
@@ -553,11 +600,22 @@ else
 
         try
         {
+            Dictionary<Guid, int> effectiveCounts;
+            if (isSecretMode && tariffs != null && tariffs.Count > 0)
+            {
+                var cheapestTariff = tariffs.OrderBy(t => t.Price).First();
+                effectiveCounts = new Dictionary<Guid, int> { [cheapestTariff.TariffId] = secretCount };
+            }
+            else
+            {
+                effectiveCounts = counts;
+            }
+
             // 1. Reservering aanmaken (stoelen toewijzen, orders per stoel)
             var reservationRequest = new
             {
                 ScreeningId,
-                Tickets = counts
+                Tickets = effectiveCounts
                     .Where(kv => kv.Value > 0)
                     .Select(kv => new { TariffId = kv.Key, Count = kv.Value })
                     .ToList(),
@@ -587,7 +645,9 @@ else
             {
                 reservation.PrintCode,
                 ScreeningId,
-                FrontendBaseUrl = baseUrl
+                FrontendBaseUrl = baseUrl,
+                SecretMovie = isSecretMode,
+                OverrideAmountCents = isSecretMode ? (int?)(secretCount * SecretMoviePrice * 100) : null
             });
 
             if (!checkoutResponse.IsSuccessStatusCode)
