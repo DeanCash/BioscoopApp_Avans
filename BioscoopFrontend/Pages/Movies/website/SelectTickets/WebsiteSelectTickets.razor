@@ -175,7 +175,7 @@
     <h1>Tarieven Kiezen</h1>
     @if (screening?.Movie != null)
     {
-        <p>@screening.Movie.Title</p>
+        <p>@(isSecretMode ? "&#127917; Secret Movie" : screening.Movie.Title)</p>
     }
 </div>
 
@@ -195,6 +195,18 @@ else if (tariffs == null || seatInfos == null)
 else
 {
     <div class="container" style="max-width: 600px;">
+        @if (isSecretMode)
+        {
+            @foreach (var seat in seatInfos)
+            {
+                <div class="tariff-card d-flex justify-content-between align-items-center">
+                    <div class="fw-bold" style="color: #1a1a2e;">Rij @seat.RowLabel - Stoel @seat.SeatNumber</div>
+                    <span style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 6px 16px; border-radius: 20px; font-weight: 700;">&#127917; &euro;2,50</span>
+                </div>
+            }
+        }
+        else
+        {
         @foreach (var seat in seatInfos)
         {
             <div class="tariff-card d-flex justify-content-between align-items-center">
@@ -210,6 +222,7 @@ else
                     }
                 </select>
             </div>
+        }
         }
 
         @if (arrangements != null && arrangements.Any())
@@ -274,16 +287,20 @@ else
 {
     <div class="ticket-overlay" @onclick="CancelPayment">
         <div class="ticket" @onclick:stopPropagation>
-            @if (screening?.Movie != null && !string.IsNullOrEmpty(screening.Movie.ImageUrl))
+            @if (screening?.Movie != null && !string.IsNullOrEmpty(screening.Movie.ImageUrl) && !isSecretMode)
             {
                 <img src="@screening.Movie.ImageUrl" style="width: 120px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.2);" alt="@screening.Movie.Title" />
+            }
+            @if (isSecretMode)
+            {
+                <div style="font-size: 4rem; margin-bottom: 15px;">&#127917;</div>
             }
             <h2 style="color: #1a1a2e; font-weight: 700;">Bestelling bevestigen</h2>
             <hr style="border-color: #eee; margin: 20px 0;" />
             <table class="ticket-table">
                 <tr>
                     <th>Film</th>
-                    <td><strong>@screening?.Movie?.Title</strong></td>
+                    <td><strong>@(isSecretMode ? "&#127917; Secret Movie" : screening?.Movie?.Title)</strong></td>
                 </tr>
                 <tr>
                     <th>Datum</th>
@@ -351,32 +368,36 @@ else
 }
 
 @code {
-    [Parameter]
-    public Guid ScreeningId { get; set; }
+[Parameter]
+public Guid ScreeningId { get; set; }
 
-    private static readonly System.Globalization.CultureInfo nlCulture = new("nl-NL");
+private static readonly System.Globalization.CultureInfo nlCulture = new("nl-NL");
+private const decimal SecretMoviePrice = 2.50m;
 
-    private List<TariffDto>? tariffs;
-    private List<ArrangementDto>? arrangements;
-    private ScreeningResponseDto? screening;
-    private ReservationGroupResponseDto? reservation;
-    private List<SeatAvailabilityDto>? seatInfos;
-    private Dictionary<Guid, Guid> seatTariffs = new(); // seatId -> tariffId
-    private Dictionary<Guid, int> arrangementCounts = new();
-    private string? errorMessage;
-    private string? paymentError;
-    private bool isProcessing;
-    private bool showPaymentOverlay;
+private List<TariffDto>? tariffs;
+private List<ArrangementDto>? arrangements;
+private ScreeningResponseDto? screening;
+private ReservationGroupResponseDto? reservation;
+private List<SeatAvailabilityDto>? seatInfos;
+private Dictionary<Guid, Guid> seatTariffs = new(); // seatId -> tariffId
+private Dictionary<Guid, int> arrangementCounts = new();
+private string? errorMessage;
+private string? paymentError;
+private bool isProcessing;
+private bool showPaymentOverlay;
+private bool isSecretMode;
 
-    private decimal TicketPrice => tariffs == null ? 0 :
+private decimal TicketPrice => isSecretMode
+    ? (seatInfos?.Count ?? 0) * SecretMoviePrice
+    : tariffs == null ? 0 :
         seatTariffs.Values.Sum(tariffId =>
             tariffs.FirstOrDefault(t => t.TariffId == tariffId)?.Price ?? 0);
 
-    private decimal ArrangementPrice => arrangements?.Sum(a => a.Price * GetArrangementCount(a.ArrangementId)) ?? 0;
-    private decimal TotalPrice => TicketPrice + ArrangementPrice;
+private decimal ArrangementPrice => arrangements?.Sum(a => a.Price * GetArrangementCount(a.ArrangementId)) ?? 0;
+private decimal TotalPrice => TicketPrice + ArrangementPrice;
 
-    private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
-        arrangements?.GroupBy(a => a.Category).ToDictionary(g => g.Key, g => g.ToList()) ?? new();
+private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
+    arrangements?.GroupBy(a => a.Category).ToDictionary(g => g.Key, g => g.ToList()) ?? new();
 
     private string GetCategoryDisplayName(string category) => category switch
     {
@@ -404,6 +425,7 @@ else
             var uri = new Uri(Navigation.Uri);
             var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
             var seatsParam = query["seats"];
+            isSecretMode = query["secret"] == "true";
 
             if (string.IsNullOrEmpty(seatsParam))
             {
@@ -480,10 +502,24 @@ else
         try
         {
             // 1. Reservering aanmaken met specifieke stoelen
+            // In secret mode: gebruik de eerste tariff maar met het secretprijsbedrag overridden
+            // door een custom tariff-opzet — we hergebruiken de goedkoopste tariff als basis
+            // maar sturen het juiste bedrag via de Stripe checkout.
+            Dictionary<Guid, Guid> effectiveSeatTariffs;
+            if (isSecretMode && tariffs != null && tariffs.Count > 0 && seatInfos != null)
+            {
+                var cheapestTariff = tariffs.OrderBy(t => t.Price).First();
+                effectiveSeatTariffs = seatInfos.ToDictionary(s => s.SeatId, _ => cheapestTariff.TariffId);
+            }
+            else
+            {
+                effectiveSeatTariffs = seatTariffs;
+            }
+
             var reservationRequest = new
             {
                 ScreeningId,
-                SeatTickets = seatTariffs.Select(kv => new
+                SeatTickets = effectiveSeatTariffs.Select(kv => new
                 {
                     SeatId   = kv.Key,
                     TariffId = kv.Value
@@ -510,12 +546,15 @@ else
 
             // 2. Stripe Checkout sessie aanmaken
             var baseUrl = Navigation.BaseUri.TrimEnd('/');
+            var secretParam = isSecretMode ? "&secret=true" : "";
             var checkoutResponse = await Http.PostAsJsonAsync("api/stripe/checkout", new
             {
                 reservation.PrintCode,
                 ScreeningId,
                 FrontendBaseUrl = baseUrl,
-                Flow = "website"
+                Flow = "website",
+                SecretMovie = isSecretMode,
+                OverrideAmountCents = isSecretMode ? (int?)((seatInfos?.Count ?? 0) * SecretMoviePrice * 100) : null
             });
 
             if (!checkoutResponse.IsSuccessStatusCode)
@@ -550,6 +589,7 @@ else
 
     private void GoBack()
     {
-        Navigation.NavigateTo($"/website/SelectSeats/{ScreeningId}");
+        var secretParam = isSecretMode ? "?secret=true" : "";
+        Navigation.NavigateTo($"/website/SelectSeats/{ScreeningId}{secretParam}");
     }
 }

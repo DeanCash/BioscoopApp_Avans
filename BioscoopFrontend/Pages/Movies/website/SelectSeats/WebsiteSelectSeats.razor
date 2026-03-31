@@ -163,7 +163,7 @@
     <h1>Kies je Stoelen</h1>
     @if (screening?.Movie != null)
     {
-        <p>@screening.Movie.Title</p>
+        <p>@(isSecretMode ? "&#127917; Secret Movie" : screening.Movie.Title)</p>
     }
 </div>
 
@@ -224,17 +224,22 @@ else
 }
 
 @code {
-    [Parameter]
-    public Guid ScreeningId { get; set; }
+[Parameter]
+public Guid ScreeningId { get; set; }
 
-    private List<SeatAvailabilityDto>? seats;
-    private ScreeningResponseDto? screening;
-    private Dictionary<string, List<SeatAvailabilityDto>> seatsByRow = new();
-    private HashSet<Guid> selectedSeatIds = new();
-    private string? errorMessage;
+private List<SeatAvailabilityDto>? seats;
+private ScreeningResponseDto? screening;
+private Dictionary<string, List<SeatAvailabilityDto>> seatsByRow = new();
+private HashSet<Guid> selectedSeatIds = new();
+private string? errorMessage;
+private bool isSecretMode;
 
     protected override async Task OnInitializedAsync()
     {
+        var uri = new Uri(Navigation.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        isSecretMode = query["secret"] == "true";
+
         try
         {
             var seatsTask = Http.GetFromJsonAsync<List<SeatAvailabilityDto>>($"api/screenings/{ScreeningId}/seats");
@@ -276,11 +281,17 @@ else
     {
         if (selectedSeatIds.Count == 0) return;
         var seatIds = string.Join(",", selectedSeatIds);
-        Navigation.NavigateTo($"/website/SelectTickets/{ScreeningId}?seats={seatIds}");
+        var secretParam = isSecretMode ? "&secret=true" : "";
+        Navigation.NavigateTo($"/website/SelectTickets/{ScreeningId}?seats={seatIds}{secretParam}");
     }
 
     private void GoBack()
     {
+        if (isSecretMode)
+        {
+            Navigation.NavigateTo("/website/home");
+            return;
+        }
         if (screening != null)
             Navigation.NavigateTo($"/website/Showing/{screening.MovieId}");
     }

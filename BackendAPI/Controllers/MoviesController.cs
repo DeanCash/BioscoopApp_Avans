@@ -1,9 +1,11 @@
 using API.Services;
+using API.Services;
 using BackendAPI.DTOs.Movies;
 using BackendAPI.Models.Movie;
 using BackendAPI.Services.Movies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BackendAPI.Controllers
 {
@@ -158,7 +160,40 @@ namespace BackendAPI.Controllers
             return Ok(result);
         }
 
-        // POST api/movies/import?pages=3
+       
+        [HttpGet("secret-screening")]
+        [AllowAnonymous]
+        public IActionResult GetSecretScreening()
+        {
+            var now = DateTimeOffset.UtcNow;
+
+            var screenings = context.Screenings
+                .AsNoTracking()
+                .Where(s => s.StartTimeUtc > now)
+                .Include(s => s.Hall)
+                    .ThenInclude(h => h.Seats)
+                .ToList();
+
+            if (!screenings.Any())
+                return NotFound("Geen toekomstige voorstellingen beschikbaar.");
+
+            var screeningIds = screenings.Select(s => s.ScreeningId).ToList();
+            var reservedCounts = context.Orders
+                .AsNoTracking()
+                .Where(o => screeningIds.Contains(o.ScreeningId) && o.SeatId != null)
+                .GroupBy(o => o.ScreeningId)
+                .Select(g => new { ScreeningId = g.Key, Count = g.Count() })
+                .ToList()
+                .ToDictionary(x => x.ScreeningId, x => x.Count);
+
+            var secretScreening = screenings
+                .OrderByDescending(s =>
+                    s.Hall.Seats.Count - reservedCounts.GetValueOrDefault(s.ScreeningId, 0))
+                .First();
+
+            return Ok(new { screeningId = secretScreening.ScreeningId });
+        }
+
         [HttpPost("import")]
         [Authorize(Roles = "Manager")]
         public async Task<IActionResult> ImportFromTmdb([FromQuery] int pages = 3, CancellationToken ct = default)

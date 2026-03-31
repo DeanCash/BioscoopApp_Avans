@@ -43,13 +43,12 @@ namespace API.Services
                 .HasOne(o => o.Screening)
                 .WithMany()
                 .HasForeignKey(o => o.ScreeningId)
-                .OnDelete(DeleteBehavior.Restrict); // of NoAction
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<OrderModel>()
                 .HasIndex(o => new { o.ScreeningId, o.SeatId })
                 .IsUnique();
 
-            // OrderArrangement configuratie
             modelBuilder.Entity<OrderArrangementModel>()
                 .HasOne(oa => oa.Order)
                 .WithMany(o => o.OrderArrangements)

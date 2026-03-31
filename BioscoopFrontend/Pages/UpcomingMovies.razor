@@ -2,6 +2,7 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager Navigation
 @using BioscoopFrontend.Models
+@using System.Text.Json.Serialization
 
 <PageTitle>Eerstkomende Films</PageTitle>
 
@@ -266,16 +267,22 @@
 @if (showSecretModal)
 {
     <div class="modal-backdrop" @onclick="CloseSecretModal">
-        <div class="modal-box" @onclick:stopPropagation="true">
+    <div class="modal-box" @onclick:stopPropagation="true">
             <h3>Secret Movie</h3>
             <p>
                 Benieuwd naar een verrassingfilm? Bij de <strong>Secret Movie</strong> weet je van tevoren niet welke film er gedraaid wordt.
                 Laat je verrassen en beleef een unieke bioscoopervaring! De film wordt pas onthuld wanneer je in de zaal zit.
             </p>
-            <div class="modal-price">Prijs: €2,50</div>
+            <div class="modal-price">Prijs: €2,50 per ticket</div>
+            @if (secretError != null)
+            {
+                <div class="alert alert-danger py-2">@secretError</div>
+            }
             <div class="modal-actions">
-                <button class="btn btn-cancel" @onclick="CloseSecretModal">Annuleren</button>
-                <button class="btn btn-select" @onclick="SelectSecretMovie">Selecteren</button>
+                <button class="btn btn-cancel" @onclick="CloseSecretModal" disabled="@secretLoading">Annuleren</button>
+                <button class="btn btn-select" @onclick="SelectSecretMovie" disabled="@secretLoading">
+                    @if (secretLoading) { <span>Laden...</span> } else { <span>Selecteren</span> }
+                </button>
             </div>
         </div>
     </div>
@@ -431,11 +438,43 @@ else
         Navigation.NavigateTo($"/kiosk/MovieInfo/{movieId}");
     }
 
-    private void OpenSecretModal() => showSecretModal = true;
-    private void CloseSecretModal() => showSecretModal = false;
+    private bool secretLoading;
+    private string? secretError;
 
-    private void SelectSecretMovie()
+    private void OpenSecretModal() => showSecretModal = true;
+    private void CloseSecretModal()
     {
         showSecretModal = false;
+        secretError = null;
     }
+
+    private async Task SelectSecretMovie()
+    {
+        secretLoading = true;
+        secretError = null;
+
+        try
+        {
+            var http = HttpClientFactory.CreateClient("PublicClient");
+            var response = await http.GetFromJsonAsync<SecretScreeningResponse>("api/movies/secret-screening");
+            if (response?.ScreeningId == null)
+            {
+                secretError = "Geen voorstelling beschikbaar. Probeer later opnieuw.";
+                return;
+            }
+
+            showSecretModal = false;
+            Navigation.NavigateTo($"/kiosk/SelectTickets/{response.ScreeningId}?secret=true");
+        }
+        catch
+        {
+            secretError = "Kon de voorstelling niet ophalen. Probeer opnieuw.";
+        }
+        finally
+        {
+            secretLoading = false;
+        }
+    }
+
+    private record SecretScreeningResponse([property: JsonPropertyName("screeningId")] Guid? ScreeningId);
 }

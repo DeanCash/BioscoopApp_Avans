@@ -1,6 +1,7 @@
 @page "/website/home"
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>Bioscoop - Deze Week</PageTitle>
 
@@ -88,12 +89,147 @@
         font-size: 0.75rem;
         font-weight: bold;
     }
+    .btn-secret {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border: none;
+        color: white;
+        padding: 10px 22px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+        white-space: nowrap;
+    }
+    .btn-secret:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.5);
+        color: white;
+    }
+    .page-header-inner {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .page-header-text {
+        flex: 1;
+        text-align: center;
+    }
+    .page-header-action {
+        position: absolute;
+        right: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    .modal-backdrop-custom {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+    }
+    .modal-box {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        max-width: 460px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .modal-box h3 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 1rem;
+    }
+    .modal-box p {
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    .modal-price {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #f5576c;
+        margin-bottom: 1.5rem;
+    }
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+    .btn-select {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border: none;
+        color: white;
+        padding: 9px 24px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-select:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        color: white;
+    }
+    .btn-cancel {
+        background: #e9ecef;
+        border: none;
+        color: #555;
+        padding: 9px 24px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+    .btn-cancel:hover {
+        background: #dee2e6;
+        color: #333;
+    }
 </style>
 
 <div class="page-header">
-    <h1>Films Deze Week</h1>
-    <p>Kies een film en boek je tickets</p>
+    <div class="page-header-inner">
+        <div class="page-header-text">
+            <h1>Films Deze Week</h1>
+            <p>Kies een film en boek je tickets</p>
+        </div>
+        <div class="page-header-action">
+            <button class="btn btn-secret" @onclick="OpenSecretModal">&#127917; Secret Movie</button>
+        </div>
+    </div>
 </div>
+
+@if (showSecretModal)
+{
+    <div class="modal-backdrop-custom" @onclick="CloseSecretModal">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <h3>Secret Movie</h3>
+            <p>
+                Benieuwd naar een verrassingfilm? Bij de <strong>Secret Movie</strong> weet je van tevoren niet welke film er gedraaid wordt.
+                Laat je verrassen en beleef een unieke bioscoopervaring! De film wordt pas onthuld wanneer je in de zaal zit.
+            </p>
+            <div class="modal-price">Prijs: &euro;2,50 per ticket</div>
+            @if (secretError != null)
+            {
+                <div class="alert alert-danger py-2">@secretError</div>
+            }
+            <div class="modal-actions">
+                <button class="btn btn-cancel" @onclick="CloseSecretModal" disabled="@secretLoading">Annuleren</button>
+                <button class="btn btn-select" @onclick="SelectSecretMovie" disabled="@secretLoading">
+                    @if (secretLoading)
+                    {
+                        <span>Laden...</span>
+                    }
+                    else
+                    {
+                        <span>Selecteren</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
 
 <div class="search-filters">
     <div class="row g-3 align-items-center">
@@ -208,12 +344,15 @@ else
 }
 
 @code {
-    private List<UpcomingMovieDto>? movies;
-    private string? loadError;
+private List<UpcomingMovieDto>? movies;
+private string? loadError;
+private bool showSecretModal;
+private bool secretLoading;
+private string? secretError;
 
-    private string searchQuery = "";
-    private string selectedGenre = "";
-    private int selectedAge = 0;
+private string searchQuery = "";
+private string selectedGenre = "";
+private int selectedAge = 0;
 
     private List<string> AvailableGenres => movies?
         .Select(m => m.Genre)
@@ -274,4 +413,40 @@ else
     {
         Navigation.NavigateTo($"/website/showing/{movieId}");
     }
+
+    private void OpenSecretModal() => showSecretModal = true;
+    private void CloseSecretModal()
+    {
+        showSecretModal = false;
+        secretError = null;
+    }
+
+    private async Task SelectSecretMovie()
+    {
+        secretLoading = true;
+        secretError = null;
+
+        try
+        {
+            var response = await Http.GetFromJsonAsync<SecretScreeningResponse>("api/movies/secret-screening");
+            if (response?.ScreeningId == null)
+            {
+                secretError = "Geen voorstelling beschikbaar. Probeer later opnieuw.";
+                return;
+            }
+
+            showSecretModal = false;
+            Navigation.NavigateTo($"/website/SelectSeats/{response.ScreeningId}?secret=true");
+        }
+        catch
+        {
+            secretError = "Kon de voorstelling niet ophalen. Probeer opnieuw.";
+        }
+        finally
+        {
+            secretLoading = false;
+        }
+    }
+
+    private record SecretScreeningResponse(Guid ScreeningId);
 }

@@ -1,4 +1,5 @@
 using API.Services;
+using BackendAPI.Services.Stripe;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
@@ -11,15 +12,23 @@ namespace BackendAPI.Controllers;
 public class StripeController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
+    private readonly IStripeSessionFetcher _sessionFetcher;
 
-    public StripeController(ApplicationDbContext db, IConfiguration config)
+    public StripeController(ApplicationDbContext db, IConfiguration config, IStripeSessionFetcher sessionFetcher)
     {
         _db = db;
+        _sessionFetcher = sessionFetcher;
         StripeConfiguration.ApiKey = config["Stripe:SecretKey"];
     }
 
     /// <param name="Flow">"kiosk" of "website" — bepaalt de success-URL na betaling.</param>
-    public record CreateCheckoutRequest(string PrintCode, Guid ScreeningId, string FrontendBaseUrl, string Flow = "kiosk");
+    public record CreateCheckoutRequest(
+        string PrintCode,
+        Guid ScreeningId,
+        string FrontendBaseUrl,
+        string Flow = "kiosk",
+        bool SecretMovie = false,
+        int? OverrideAmountCents = null);
     public record ConfirmPaymentRequest(string SessionId);
 
     /// <summary>
@@ -40,8 +49,14 @@ public class StripeController : ControllerBase
         if (orders.Count == 0)
             return NotFound("Geen orders gevonden voor deze printcode.");
 
-        var totalCents = (long)(orders.Sum(o => o.TotalAmount) * 100);
-        var movieTitle = orders.First().Screening.Movie.Title;
+        var totalCents = request.OverrideAmountCents.HasValue
+            ? (long)request.OverrideAmountCents.Value
+            : (long)(orders.Sum(o => o.TotalAmount) * 100);
+        var movieTitle = request.SecretMovie ? "Secret Movie" : orders.First().Screening.Movie.Title;
+
+        var cancelPath = request.Flow == "website"
+            ? $"{request.FrontendBaseUrl}/website/SelectTickets/{request.ScreeningId}"
+            : $"{request.FrontendBaseUrl}/kiosk/SelectTickets/{request.ScreeningId}";
 
         var options = new SessionCreateOptions
         {
@@ -65,7 +80,7 @@ public class StripeController : ControllerBase
             },
             Mode       = "payment",
             SuccessUrl = $"{request.FrontendBaseUrl}/{request.Flow}/ticket/{request.PrintCode}?session_id={{CHECKOUT_SESSION_ID}}",
-            CancelUrl  = $"{request.FrontendBaseUrl}/kiosk/SelectTickets/{request.ScreeningId}",
+            CancelUrl  = cancelPath,
             Metadata   = new Dictionary<string, string>
             {
                 ["printCode"] = request.PrintCode
@@ -89,8 +104,7 @@ public class StripeController : ControllerBase
         Session session;
         try
         {
-            var service = new SessionService();
-            session = await service.GetAsync(request.SessionId, cancellationToken: ct);
+            session = await _sessionFetcher.GetAsync(request.SessionId, ct);
         }
         catch
         {

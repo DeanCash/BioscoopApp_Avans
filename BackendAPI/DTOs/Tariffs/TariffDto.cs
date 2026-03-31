@@ -11,5 +11,8 @@ namespace BackendAPI.DTOs.Tariffs
         [Required(ErrorMessage = "DisplayName in minutes is required.")]
         public string DisplayName { get; set; } = null!;
         public int SortOrder { get; set; }
+        [Required(ErrorMessage = "Price is required.")]
+        [Range(0, double.MaxValue, ErrorMessage = "Price must be a positive value.")]
+        public decimal Price { get; set; }
     }
 }
