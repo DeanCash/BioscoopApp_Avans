@@ -215,7 +215,7 @@ else
                 <select class="form-select tariff-select"
                         value="@GetSelectedTariff(seat.SeatId)"
                         @onchange="(e) => SetTariff(seat.SeatId, e)">
-                    @foreach (var tariff in tariffs)
+                    @foreach (var tariff in AvailableTariffs)
                     {
                         <option value="@tariff.TariffId">
                             @tariff.DisplayName — @tariff.Price.ToString("C2", nlCulture)
@@ -388,6 +388,11 @@ private bool isProcessing;
 private bool showPaymentOverlay;
 private bool isSecretMode;
 
+private bool IsAdultMovie => screening?.Movie?.Age >= 18;
+private List<TariffDto> AvailableTariffs => IsAdultMovie
+    ? tariffs?.Where(t => !t.TariffType.Equals("Child", StringComparison.OrdinalIgnoreCase)).ToList() ?? new()
+    : tariffs ?? new();
+
 private decimal TicketPrice => isSecretMode
     ? (seatInfos?.Count ?? 0) * SecretMoviePrice
     : tariffs == null ? 0 :
@@ -466,10 +471,10 @@ private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
                 .ThenBy(s => s.SeatNumber)
                 .ToList();
 
-            // Default all seats to the first tariff
-            if (tariffs.Count > 0)
+            // Default all seats to the first available tariff
+            if (AvailableTariffs.Count > 0)
             {
-                var defaultTariffId = tariffs.First().TariffId;
+                var defaultTariffId = AvailableTariffs.First().TariffId;
                 foreach (var seat in seatInfos)
                     seatTariffs[seat.SeatId] = defaultTariffId;
             }

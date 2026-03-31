@@ -39,24 +39,40 @@ public static class DbSeeder
             new() { HallId = Guid.Parse("aaaaaaaa-0001-0000-0000-000000000000"), Number = 1, LayoutType = LayoutType.Standard,        CreatedAtUtc = DateTimeOffset.UtcNow },
             new() { HallId = Guid.Parse("aaaaaaaa-0002-0000-0000-000000000000"), Number = 2, LayoutType = LayoutType.Imax,             CreatedAtUtc = DateTimeOffset.UtcNow },
             new() { HallId = Guid.Parse("aaaaaaaa-0003-0000-0000-000000000000"), Number = 3, LayoutType = LayoutType.Vip,              CreatedAtUtc = DateTimeOffset.UtcNow },
-            new() { HallId = Guid.Parse("aaaaaaaa-0004-0000-0000-000000000000"), Number = 4, LayoutType = LayoutType.ThirdDimensional, CreatedAtUtc = DateTimeOffset.UtcNow },
+            new() { HallId = Guid.Parse("aaaaaaaa-0004-0000-0000-000000000000"), Number = 4, LayoutType = LayoutType.Standard,         CreatedAtUtc = DateTimeOffset.UtcNow },
+            new() { HallId = Guid.Parse("aaaaaaaa-0005-0000-0000-000000000000"), Number = 5, LayoutType = LayoutType.Standard,         CreatedAtUtc = DateTimeOffset.UtcNow },
+            new() { HallId = Guid.Parse("aaaaaaaa-0006-0000-0000-000000000000"), Number = 6, LayoutType = LayoutType.Standard,         CreatedAtUtc = DateTimeOffset.UtcNow },
         };
 
-        // Seats per hal: rijen A–E, stoelen 1–10
+        var rowLabels = new[] { "A", "B", "C", "D", "E", "F", "G", "H" };
+
         foreach (var hall in halls)
         {
-            foreach (var row in new[] { "A", "B", "C", "D", "E" })
+            switch (hall.Number)
             {
-                for (int seat = 1; seat <= 10; seat++)
-                {
-                    hall.Seats.Add(new SeatModel
-                    {
-                        SeatId     = Guid.NewGuid(),
-                        HallId     = hall.HallId,
-                        RowLabel   = row,
-                        SeatNumber = seat
-                    });
-                }
+                // Zaal 1-3: 8 rijen van 15 stoelen (120 stoelen)
+                case 1 or 2 or 3:
+                    for (int r = 0; r < 8; r++)
+                        for (int s = 1; s <= 15; s++)
+                            hall.Seats.Add(new SeatModel { SeatId = Guid.NewGuid(), HallId = hall.HallId, RowLabel = rowLabels[r], SeatNumber = s });
+                    break;
+
+                // Zaal 4: 6 rijen van 10 stoelen (60 stoelen)
+                case 4:
+                    for (int r = 0; r < 6; r++)
+                        for (int s = 1; s <= 10; s++)
+                            hall.Seats.Add(new SeatModel { SeatId = Guid.NewGuid(), HallId = hall.HallId, RowLabel = rowLabels[r], SeatNumber = s });
+                    break;
+
+                // Zaal 5 & 6: voorin 2 rijen van 10, achterin 2 rijen van 15 (50 stoelen)
+                case 5 or 6:
+                    for (int r = 0; r < 2; r++)
+                        for (int s = 1; s <= 10; s++)
+                            hall.Seats.Add(new SeatModel { SeatId = Guid.NewGuid(), HallId = hall.HallId, RowLabel = rowLabels[r], SeatNumber = s });
+                    for (int r = 2; r < 4; r++)
+                        for (int s = 1; s <= 15; s++)
+                            hall.Seats.Add(new SeatModel { SeatId = Guid.NewGuid(), HallId = hall.HallId, RowLabel = rowLabels[r], SeatNumber = s });
+                    break;
             }
         }
 
@@ -162,6 +178,8 @@ public static class DbSeeder
         var hall2 = Guid.Parse("aaaaaaaa-0002-0000-0000-000000000000");
         var hall3 = Guid.Parse("aaaaaaaa-0003-0000-0000-000000000000");
         var hall4 = Guid.Parse("aaaaaaaa-0004-0000-0000-000000000000");
+        var hall5 = Guid.Parse("aaaaaaaa-0005-0000-0000-000000000000");
+        var hall6 = Guid.Parse("aaaaaaaa-0006-0000-0000-000000000000");
 
         // Vaste film-IDs
         var dune         = Guid.Parse("bbbbbbbb-0001-0000-0000-000000000000");

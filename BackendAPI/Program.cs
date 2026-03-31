@@ -2,6 +2,7 @@ using API.Services;
 using BackendAPI.Services.Movies;
 using BackendAPI.Services;
 using BackendAPI.Services.Newsletter;
+using BackendAPI.Services.Stripe;
 using BackendAPI.Models.User;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -51,6 +52,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<ReservationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IStripeSessionFetcher, StripeSessionFetcher>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
     {
@@ -88,9 +90,9 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    // db.Database.Migrate();
-    // DbSeeder.Seed(db);
-    // SeedUsers(db);
+    db.Database.EnsureCreated();
+    DbSeeder.Seed(db);
+    SeedUsers(db);
 }
 
 // Configure the HTTP request pipeline.

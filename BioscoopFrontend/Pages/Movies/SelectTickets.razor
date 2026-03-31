@@ -252,7 +252,7 @@ else
         }
         else
         {
-        @foreach (var tariff in tariffs)
+        @foreach (var tariff in AvailableTariffs)
         {
             <div class="tariff-card d-flex justify-content-between align-items-center">
                 <div>
@@ -515,6 +515,10 @@ else
     private const decimal SecretMoviePrice = 2.50m;
 
     private decimal SecretTotalPrice => secretCount * SecretMoviePrice;
+    private bool IsAdultMovie => screening?.Movie?.Age >= 18;
+    private List<TariffDto> AvailableTariffs => IsAdultMovie
+        ? tariffs?.Where(t => !t.TariffType.Equals("Child", StringComparison.OrdinalIgnoreCase)).ToList() ?? new()
+        : tariffs ?? new();
     private int TotalTickets => counts.Values.Sum();
     private decimal TicketPrice => tariffs?.Sum(t => t.Price * GetCount(t.TariffId)) ?? 0;
     private decimal ArrangementPrice => arrangements?.Sum(a => a.Price * GetArrangementCount(a.ArrangementId)) ?? 0;
