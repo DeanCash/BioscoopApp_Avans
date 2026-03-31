@@ -1,8 +1,9 @@
 @page "/kiosk/MovieInfo/{MovieId:guid}"
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject LanguageService Lang
 
-<PageTitle>@(movie?.Title ?? "Film Info")</PageTitle>
+<PageTitle>@(movie?.Title ?? Lang.T("FilmInfo"))</PageTitle>
 
 <style>
     .page-header {
@@ -140,10 +141,10 @@
 
 <div class="page-header">
     <button class="btn btn-back mb-3" @onclick="GoBack">
-        <span>&larr;</span> Terug
+        <span>&larr;</span> @Lang.T("Back")
     </button>
-    <h1>Film Informatie</h1>
-    <p>Bekijk de details van deze film</p>
+    <h1>@Lang.T("FilmInformation")</h1>
+    <p>@Lang.T("ViewFilmDetails")</p>
 </div>
 
 @if (errorMessage != null)
@@ -154,9 +155,9 @@ else if (movie == null)
 {
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Laden...</span>
+            <span class="visually-hidden">@Lang.T("Loading")</span>
         </div>
-        <p class="mt-3 text-muted">Film laden...</p>
+        <p class="mt-3 text-muted">@Lang.T("LoadingMovie")</p>
     </div>
 }
 else
@@ -180,29 +181,29 @@ else
                 <h4>@movie.Title</h4>
 
                 <div class="info-field">
-                    <span class="info-label">Genre</span>
+                    <span class="info-label">@Lang.T("Genre")</span>
                     <p class="info-value">@movie.Genre</p>
                 </div>
 
                 <div class="info-field">
-                    <span class="info-label">Duur</span>
-                    <p class="info-value">@movie.DurationMinutes minuten</p>
+                    <span class="info-label">@Lang.T("Duration")</span>
+                    <p class="info-value">@movie.DurationMinutes @Lang.T("Minutes")</p>
                 </div>
 
                 <div class="info-field">
-                    <span class="info-label">Leeftijd</span>
+                    <span class="info-label">@Lang.T("Age")</span>
                     <p class="info-value">@movie.Age+</p>
                 </div>
 
                 <div class="info-field">
-                    <span class="info-label">Beschrijving</span>
+                    <span class="info-label">@Lang.T("Description")</span>
                     <p class="info-value description">@movie.Description</p>
                 </div>
             </div>
         </div>
 
         <a href="/kiosk/Showing/@MovieId" class="btn-choose">
-            Kies een voorstelling &rarr;
+            @Lang.T("ChooseShowingArrow")
         </a>
     </div>
 }
@@ -222,7 +223,7 @@ else
         }
         catch (HttpRequestException)
         {
-            errorMessage = "Film kon niet worden geladen.";
+            errorMessage = Lang.T("MovieCouldNotBeLoaded");
         }
     }
 

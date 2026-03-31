@@ -1,8 +1,9 @@
 @page "/website/Showing/{MovieId:guid}"
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject LanguageService Lang
 
-<PageTitle>Voorstellingen</PageTitle>
+<PageTitle>@Lang.T("Showings")</PageTitle>
 
 <style>
     .page-header {
@@ -118,9 +119,9 @@
 
 <div class="page-header">
     <button class="btn btn-back mb-3" @onclick="GoBack">
-        <span>&larr;</span> Terug
+        <span>&larr;</span> @Lang.T("Back")
     </button>
-    <h1>Kies een Voorstelling</h1>
+    <h1>@Lang.T("ChooseAShowing")</h1>
     @if (movieTitle != null)
     {
         <p>@movieTitle</p>
@@ -135,17 +136,17 @@ else if (screenings == null)
 {
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Laden...</span>
+            <span class="visually-hidden">@Lang.T("Loading")...</span>
         </div>
-        <p class="mt-3 text-muted">Voorstellingen laden...</p>
+        <p class="mt-3 text-muted">@Lang.T("LoadingShowings")...</p>
     </div>
 }
 else if (!screenings.Any())
 {
     <div class="container">
         <div class="no-screenings">
-            <h4>Geen voorstellingen gevonden</h4>
-            <p>Er zijn momenteel geen voorstellingen gepland voor deze film.</p>
+            <h4>@Lang.T("NoShowingsFound")</h4>
+            <p>@Lang.T("NoShowingsPlanned")</p>
         </div>
     </div>
 }
@@ -160,21 +161,21 @@ else
                     <div class="showing-time">@screening.StartTimeUtc.ToLocalTime().ToString("HH:mm")</div>
                 </div>
                 <div class="text-center">
-                    <span class="hall-badge">Zaal @(screening.Hall?.Number)</span>
+                    <span class="hall-badge">@Lang.T("Hall") @(screening.Hall?.Number)</span>
                     <div class="seats-badge">
                         @if (availableSeats != null && availableSeats.TryGetValue(screening.ScreeningId, out var count))
                         {
                             var seatsClass = count > 20 ? "seats-available" : count > 5 ? "seats-limited" : "seats-full";
-                            <span class="@seatsClass">@count</span> <span>stoelen beschikbaar</span>
+                            <span class="@seatsClass">@count</span> <span>@Lang.T("SeatsAvailable").ToLower()</span>
                         }
                         else
                         {
-                            <span class="text-muted">Laden...</span>
+                            <span class="text-muted">@Lang.T("Loading")...</span>
                         }
                     </div>
                 </div>
                 <button class="btn btn-book">
-                    Boek nu &rarr;
+                    @Lang.T("BookNowArrow")
                 </button>
             </div>
         }
@@ -213,7 +214,7 @@ else
         }
         catch (HttpRequestException)
         {
-            errorMessage = "Voorstellingen konden niet worden geladen.";
+            errorMessage = Lang.T("ShowingsCouldNotBeLoaded");
         }
     }
 
@@ -223,9 +224,9 @@ else
         var today = DateTimeOffset.Now.Date;
 
         if (local.Date == today)
-            return $"Vandaag - {local:d MMMM}";
+            return $"{Lang.T("Today")} - {local:d MMMM}";
         if (local.Date == today.AddDays(1))
-            return $"Morgen - {local:d MMMM}";
+            return $"{Lang.T("Tomorrow")} - {local:d MMMM}";
 
         return local.ToString("dddd - d MMMM");
     }

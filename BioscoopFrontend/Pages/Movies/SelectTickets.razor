@@ -2,9 +2,10 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject LanguageService Lang
 @using System.Web
 
-<PageTitle>Tickets Kiezen</PageTitle>
+<PageTitle>@Lang.T("ChooseTickets")</PageTitle>
 
 <style>
     .page-header {
@@ -192,9 +193,9 @@
 
 <div class="page-header">
     <button class="btn btn-back mb-3" @onclick="GoBack">
-        <span>&larr;</span> Terug
+        <span>&larr;</span> @Lang.T("Back")
     </button>
-    <h1>Tickets Kiezen</h1>
+    <h1>@Lang.T("ChooseTickets")</h1>
     @if (screening?.Movie != null)
     {
         <p>@screening.Movie.Title</p>
@@ -209,9 +210,9 @@ else if (tariffs == null)
 {
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Laden...</span>
+            <span class="visually-hidden">@Lang.T("Loading")...</span>
         </div>
-        <p class="mt-3 text-muted">Tarieven laden...</p>
+        <p class="mt-3 text-muted">@Lang.T("LoadingTariffs")...</p>
     </div>
 }
 else
@@ -222,14 +223,14 @@ else
             <div class="text-center p-4 mb-3" style="background: linear-gradient(135deg, #fff0fc 0%, #fff 100%); border-radius: 16px; border: 2px solid #f5576c; box-shadow: 0 4px 16px rgba(245,87,108,0.1);">
                 <div style="font-size: 3.5rem; margin-bottom: 12px;">&#127917;</div>
                 <h4 style="color: #1a1a2e; font-weight: 700;">Secret Movie</h4>
-                <p class="text-muted mb-1">Je weet niet welke film je gaat zien &mdash; een echte verrassing!</p>
-                <p style="font-size: 1.2rem; font-weight: 700; color: #f5576c;">&euro;2,50 per ticket</p>
+                <p class="text-muted mb-1">@Lang.T("SecretMovieSurprise")</p>
+                <p style="font-size: 1.2rem; font-weight: 700; color: #f5576c;">&euro;2,50 @Lang.T("PerTicket")</p>
             </div>
 
             <div class="tariff-card d-flex justify-content-between align-items-center">
                 <div>
                     <div class="tariff-name">&#127917; Secret Movie</div>
-                    <div class="tariff-price">&euro;2,50 per ticket</div>
+                    <div class="tariff-price">&euro;2,50 @Lang.T("PerTicket")</div>
                 </div>
                 <div class="counter d-flex align-items-center gap-2">
                     <button class="btn btn-counter" @onclick="DecrementSecret" disabled="@(secretCount == 0)">&#8722;</button>
@@ -240,13 +241,13 @@ else
 
             <div class="summary mt-4 p-3">
                 <div class="d-flex justify-content-between fw-bold fs-5">
-                    <span>Totaal (@secretCount tickets)</span>
+                    <span>@Lang.T("Total") (@secretCount @Lang.T("Tickets").ToLower())</span>
                     <span>@SecretTotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
                 </div>
             </div>
 
             <button class="btn btn-pay" disabled="@(secretCount == 0)" @onclick="ShowPayment">
-                Doorgaan &rarr;
+                @Lang.T("ContinueArrow")
             </button>
         }
         else
@@ -270,7 +271,7 @@ else
         @if (arrangements != null && arrangements.Any())
         {
             <div class="mt-4">
-                <h5 class="fw-bold mb-3" style="color: #e74c3c;">Extra's & Arrangementen</h5>
+                <h5 class="fw-bold mb-3" style="color: #e74c3c;">@Lang.T("ExtrasAndArrangements")</h5>
 
                 @foreach (var category in ArrangementsByCategory)
                 {
@@ -301,25 +302,25 @@ else
 
         <div class="summary mt-4 p-3">
             <div class="d-flex justify-content-between mb-1">
-                <span>Tickets (@TotalTickets)</span>
+                <span>@Lang.T("Tickets") (@TotalTickets)</span>
                 <span>@TicketPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
             </div>
             @if (ArrangementPrice > 0)
             {
                 <div class="d-flex justify-content-between mb-1" style="color: #e74c3c;">
-                    <span>Extra's</span>
+                    <span>@Lang.T("Extras")</span>
                     <span>@ArrangementPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
                 </div>
             }
             <hr class="my-2" />
             <div class="d-flex justify-content-between fw-bold fs-5">
-                <span>Totaal</span>
+                <span>@Lang.T("Total")</span>
                 <span>@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
             </div>
         </div>
 
         <button class="btn btn-pay" disabled="@(TotalTickets == 0)" @onclick="ShowPayment">
-            Doorgaan &rarr;
+            @Lang.T("ContinueArrow")
         </button>
         }
     </div>
@@ -330,37 +331,37 @@ else
 {
     <div class="ticket-overlay" @onclick="CancelPayment">
         <div class="ticket" @onclick:stopPropagation>
-            <h2 style="color: #1a1a2e; font-weight: 700; font-size: 1.3rem; margin-bottom: 12px;">Bestelling bevestigen</h2>
+            <h2 style="color: #1a1a2e; font-weight: 700; font-size: 1.3rem; margin-bottom: 12px;">@Lang.T("ConfirmOrder")</h2>
             <hr style="border-color: #eee; margin: 10px 0;" />
             <table class="ticket-table">
                 <tr>
-                    <th>Film</th>
+                    <th>@Lang.T("Film")</th>
                     <td><strong>@(isSecretMode ? "&#127917; Secret Movie" : screening?.Movie?.Title)</strong></td>
                 </tr>
                 <tr>
-                    <th>Datum</th>
+                    <th>@Lang.T("Date")</th>
                     <td>@screening?.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</td>
                 </tr>
                 <tr>
-                    <th>Aanvang</th>
-                    <td>@screening?.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</td>
+                    <th>@Lang.T("StartTime")</th>
+                    <td>@screening?.StartTimeUtc.LocalDateTime.ToString("HH:mm") @Lang.T("Hour").ToLower()</td>
                 </tr>
                 <tr>
-                    <th>Zaal</th>
+                    <th>@Lang.T("Hall")</th>
                     <td>
                         <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">
-                            Zaal @screening?.Hall?.Number
+                            @Lang.T("Hall") @screening?.Hall?.Number
                         </span>
                     </td>
                 </tr>
                 <tr>
-                    <th>Tickets</th>
+                    <th>@Lang.T("Tickets")</th>
                     <td>@(isSecretMode ? secretCount : TotalTickets)</td>
                 </tr>
                 @if (ArrangementPrice > 0)
                 {
                     <tr>
-                        <th>Extra's</th>
+                        <th>@Lang.T("Extras")</th>
                         <td>
                             @foreach (var arr in arrangements!.Where(a => GetArrangementCount(a.ArrangementId) > 0))
                             {
@@ -370,14 +371,14 @@ else
                     </tr>
                 }
                 <tr>
-                    <th>Bedrag</th>
+                    <th>@Lang.T("Amount")</th>
                     <td><strong style="font-size: 1.3rem; color: #27ae60;">@((isSecretMode ? SecretTotalPrice : TotalPrice).ToString("C2", new System.Globalization.CultureInfo("nl-NL")))</strong></td>
                 </tr>
             </table>
             <hr style="border-color: #eee; margin: 10px 0;" />
             <div style="background: #e8f5e9; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; justify-content: center;">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" style="height: 24px;" alt="Stripe" />
-                <small style="color: #2e7d32;">Veilig betalen via Stripe</small>
+                <small style="color: #2e7d32;">@Lang.T("SafePaymentStripe")</small>
             </div>
             @if (paymentError != null)
             {
@@ -387,15 +388,15 @@ else
                 <button class="btn btn-confirm" @onclick="GoToStripePayment" disabled="@isProcessing">
                     @if (isProcessing)
                     {
-                        <span>Doorsturen naar Stripe...</span>
+                        <span>@Lang.T("RedirectingToStripe")...</span>
                     }
                     else
                     {
-                        <span>Betaal via Stripe &rarr;</span>
+                        <span>@Lang.T("PayViaStripeArrow")</span>
                     }
                 </button>
                 <button class="btn btn-cancel" @onclick="CancelPayment" disabled="@isProcessing">
-                    Annuleren
+                    @Lang.T("Cancel")
                 </button>
             </div>
         </div>
@@ -413,8 +414,8 @@ else
                     <img src="@screening.Movie.ImageUrl" style="width: 100px; border-radius: 8px; flex-shrink: 0;" alt="@screening.Movie.Title" />
                 }
                 <div style="text-align: left; flex: 1;">
-                    <h3 style="margin: 0 0 5px 0; color: #1a1a2e;">CINEMA TICKET</h3>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;">Bewaar dit ticket goed</p>
+                    <h3 style="margin: 0 0 5px 0; color: #1a1a2e;">@Lang.T("CinemaTicket").ToUpper()</h3>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;">@Lang.T("KeepTicketSafe")</p>
                 </div>
             </div>
 
@@ -424,28 +425,28 @@ else
 
             <table class="ticket-table">
                 <tr>
-                    <th>Datum</th>
+                    <th>@Lang.T("Date")</th>
                     <td><strong>@screening?.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</strong></td>
                 </tr>
                 <tr>
-                    <th>Aanvang</th>
-                    <td><strong style="font-size: 1.3rem; color: #e74c3c;">@screening?.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</strong></td>
+                    <th>@Lang.T("StartTime")</th>
+                    <td><strong style="font-size: 1.3rem; color: #e74c3c;">@screening?.StartTimeUtc.LocalDateTime.ToString("HH:mm") @Lang.T("Hour").ToLower()</strong></td>
                 </tr>
                 <tr>
-                    <th>Zaal</th>
+                    <th>@Lang.T("Hall")</th>
                     <td>
                         <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 20px; border-radius: 25px; font-weight: bold; font-size: 1.1rem;">
-                            ZAAL @reservation.HallNumber
+                            @($"{Lang.T("Hall").ToUpper()} {reservation.HallNumber}")
                         </span>
                     </td>
                 </tr>
                 <tr>
-                    <th>Stoelen</th>
+                    <th>@Lang.T("Seats")</th>
                     <td>
                         <strong>
                             @foreach (var seat in reservation.Seats)
                             {
-                                <span class="badge bg-secondary me-1">Rij @seat.RowLabel - Stoel @seat.SeatNumber</span>
+                                <span class="badge bg-secondary me-1">@Lang.T("Row") @seat.RowLabel - @Lang.T("Seat") @seat.SeatNumber</span>
                             }
                         </strong>
                     </td>
@@ -453,7 +454,7 @@ else
                 @if (reservation.Arrangements != null && reservation.Arrangements.Any())
                 {
                     <tr>
-                        <th>Extra's</th>
+                        <th>@Lang.T("Extras")</th>
                         <td>
                             @foreach (var arr in reservation.Arrangements)
                             {
@@ -463,31 +464,31 @@ else
                     </tr>
                 }
                 <tr>
-                    <th>Bedrag</th>
+                    <th>@Lang.T("Amount")</th>
                     <td><strong>@reservation.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
                 </tr>
                 <tr>
-                    <th>Status</th>
-                    <td><span style="color: #27ae60; font-weight: bold;">BETAALD (PIN)</span></td>
+                    <th>@Lang.T("Status")</th>
+                    <td><span style="color: #27ae60; font-weight: bold;">@Lang.T("PaidPin").ToUpper()</span></td>
                 </tr>
             </table>
 
             <div style="background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 15px 0; text-align: center;">
-                <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">TICKETCODE</p>
+                <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">@Lang.T("TicketCode").ToUpper()</p>
                 <p style="margin: 0; font-size: 1.8rem; font-weight: bold; letter-spacing: 4px; font-family: monospace;">@reservation.PrintCode</p>
             </div>
 
             <div style="border-top: 2px dashed #ccc; border-bottom: 2px dashed #ccc; padding: 15px 0; margin: 15px 0;">
                 <p class="ticket-barcode" style="margin: 0;">||||| |||| | || ||| || |||| |||||</p>
-                <p style="margin: 5px 0 0 0; font-size: 0.75rem; color: #999;">Toon dit ticket bij de ingang</p>
+                <p style="margin: 5px 0 0 0; font-size: 0.75rem; color: #999;">@Lang.T("ShowTicketAtEntrance")</p>
             </div>
 
             <div class="no-print mt-3 d-flex gap-2 justify-content-center">
                 <button class="btn btn-success btn-lg" @onclick="PrintCurrentTicket" style="padding: 12px 30px;">
-                    Afdrukken
+                    @Lang.T("Print")
                 </button>
                 <button class="btn btn-outline-secondary btn-lg" @onclick="CloseTicket">
-                    Sluiten
+                    @Lang.T("Close")
                 </button>
             </div>
         </div>
@@ -526,10 +527,10 @@ else
     private string GetCategoryDisplayName(string category) => category switch
     {
         "Popcorn" => "Popcorn",
-        "Drank" => "Drankjes",
-        "Snack" => "Snacks",
-        "ComboPackage" => "Combo Deals",
-        "HorecaSpecial" => "Specials",
+        "Drank" => Lang.T("Drinks"),
+        "Snack" => Lang.T("Snacks"),
+        "ComboPackage" => Lang.T("ComboDeals"),
+        "HorecaSpecial" => Lang.T("Specials"),
         _ => category
     };
 
@@ -566,7 +567,7 @@ else
         }
         catch (HttpRequestException)
         {
-            errorMessage = "Gegevens konden niet worden geladen.";
+            errorMessage = Lang.T("DataCouldNotBeLoaded");
         }
     }
 
@@ -630,9 +631,9 @@ else
             if (!reservationResponse.IsSuccessStatusCode)
             {
                 var body = await reservationResponse.Content.ReadAsStringAsync();
-                paymentError = body.Contains("SOLD_OUT") ? "Uitverkocht! Geen stoelen meer beschikbaar."
-                    : body.Contains("NO_ADJACENT") ? "Niet genoeg aaneengesloten stoelen beschikbaar."
-                    : $"Reservering mislukt ({reservationResponse.StatusCode}): {body}";
+                paymentError = body.Contains("SOLD_OUT") ? Lang.T("SoldOut")
+                    : body.Contains("NO_ADJACENT") ? Lang.T("NotEnoughAdjacentSeats")
+                    : $"{Lang.T("ReservationFailed")} ({reservationResponse.StatusCode}): {body}";
                 return;
             }
 
@@ -653,7 +654,7 @@ else
             if (!checkoutResponse.IsSuccessStatusCode)
             {
                 var stripeBody = await checkoutResponse.Content.ReadAsStringAsync();
-                paymentError = $"Stripe fout ({checkoutResponse.StatusCode}): {stripeBody}";
+                paymentError = $"{Lang.T("StripeFailed")} ({checkoutResponse.StatusCode}): {stripeBody}";
                 return;
             }
 
@@ -665,7 +666,7 @@ else
         }
         catch (Exception ex)
         {
-            paymentError = $"Er ging iets mis: {ex.Message}";
+            paymentError = $"{Lang.T("SomethingWentWrong")}: {ex.Message}";
         }
         finally
         {

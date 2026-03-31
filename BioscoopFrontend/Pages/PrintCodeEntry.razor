@@ -2,8 +2,9 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject LanguageService Lang
 
-<PageTitle>Tickets Ophalen</PageTitle>
+<PageTitle>@Lang.T("PickUpTicketsTitle")</PageTitle>
 
 <style>
     .page-header {
@@ -153,19 +154,19 @@
 
 <div class="page-header">
     <button class="btn btn-back mb-3" @onclick="GoBack">
-        <span>&larr;</span> Terug
+        <span>&larr;</span> @Lang.T("Back")
     </button>
-    <h1>Tickets Ophalen</h1>
-    <p>Voer je code in om je tickets af te drukken</p>
+    <h1>@Lang.T("PickUpTicketsTitle")</h1>
+    <p>@Lang.T("EnterCodeToPrint")</p>
 </div>
 
 <div class="code-card">
-    <p class="text-muted mb-3 text-center">Voer de code in die je thuis hebt ontvangen.</p>
+    <p class="text-muted mb-3 text-center">@Lang.T("EnterCodeReceived")</p>
 
     <input class="code-input mb-3"
            @bind="inputCode"
            @bind:event="oninput"
-           placeholder="bijv. A1B2C3"
+           placeholder="@Lang.T("ExampleCode")"
            maxlength="10" />
 
     @if (errorMessage != null)
@@ -176,7 +177,7 @@
     <button class="btn btn-search"
             disabled="@(string.IsNullOrWhiteSpace(inputCode) || isLoading)"
             @onclick="LookupCode">
-        @if (isLoading) { <span>Zoeken...</span> } else { <span>Zoek ticket &rarr;</span> }
+        @if (isLoading) { <span>@Lang.T("Searching")...</span> } else { <span>@Lang.T("SearchTicketArrow")</span> }
     </button>
 </div>
 
@@ -187,8 +188,8 @@
         <div class="ticket" @onclick:stopPropagation style="border: 4px dashed #667eea;">
 
             <div style="text-align: left; margin-bottom: 20px;">
-                <h3 style="margin: 0 0 4px 0; color: #1a1a2e; font-weight: 800;">CINEMA TICKET</h3>
-                <p style="margin: 0; color: #666; font-size: 0.9rem;">Bewaar dit ticket goed</p>
+                <h3 style="margin: 0 0 4px 0; color: #1a1a2e; font-weight: 800;">@Lang.T("CinemaTicket").ToUpper()</h3>
+                <p style="margin: 0; color: #666; font-size: 0.9rem;">@Lang.T("KeepTicketSafe")</p>
             </div>
 
             <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 18px; border-radius: 12px; margin-bottom: 20px;">
@@ -197,58 +198,58 @@
 
             <table class="ticket-table">
                 <tr>
-                    <th>Datum</th>
+                    <th>@Lang.T("Date")</th>
                     <td><strong>@reservation.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</strong></td>
                 </tr>
                 <tr>
-                    <th>Aanvang</th>
-                    <td><strong style="font-size: 1.3rem; color: #e74c3c;">@reservation.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</strong></td>
+                    <th>@Lang.T("StartTime")</th>
+                    <td><strong style="font-size: 1.3rem; color: #e74c3c;">@reservation.StartTimeUtc.LocalDateTime.ToString("HH:mm") @Lang.T("Hour").ToLower()</strong></td>
                 </tr>
                 <tr>
-                    <th>Zaal</th>
+                    <th>@Lang.T("Hall")</th>
                     <td>
                         <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 20px; border-radius: 25px; font-weight: bold; font-size: 1.1rem;">
-                            ZAAL @reservation.HallNumber
+                            @($"{Lang.T("Hall").ToUpper()} {reservation.HallNumber}")
                         </span>
                     </td>
                 </tr>
                 <tr>
-                    <th>Stoelen</th>
+                    <th>@Lang.T("Seats")</th>
                     <td>
                         <strong>
                             @foreach (var seat in reservation.Seats)
                             {
-                                <span class="badge" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); margin-right: 4px;">Rij @seat.RowLabel - Stoel @seat.SeatNumber</span>
+                                <span class="badge" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); margin-right: 4px;">@Lang.T("Row") @seat.RowLabel - @Lang.T("Seat") @seat.SeatNumber</span>
                             }
                         </strong>
                     </td>
                 </tr>
                 <tr>
-                    <th>Bedrag</th>
+                    <th>@Lang.T("Amount")</th>
                     <td><strong>@reservation.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
                 </tr>
                 <tr>
-                    <th>Status</th>
-                    <td><span style="color: #27ae60; font-weight: bold;">BETAALD</span></td>
+                    <th>@Lang.T("Status")</th>
+                    <td><span style="color: #27ae60; font-weight: bold;">@Lang.T("Paid").ToUpper()</span></td>
                 </tr>
             </table>
 
             <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
-                <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Ticketcode</p>
+                <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">@Lang.T("TicketCode")</p>
                 <p style="margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: 6px; font-family: monospace; color: #1a1a2e;">@reservation.PrintCode</p>
             </div>
 
             <div style="border-top: 3px dashed #ccc; border-bottom: 3px dashed #ccc; padding: 18px 0; margin: 20px 0;">
                 <p class="ticket-barcode" style="margin: 0;">||||| |||| | || ||| || |||| |||||</p>
-                <p style="margin: 8px 0 0 0; font-size: 0.8rem; color: #999;">Toon dit ticket bij de ingang</p>
+                <p style="margin: 8px 0 0 0; font-size: 0.8rem; color: #999;">@Lang.T("ShowTicketAtEntrance")</p>
             </div>
 
             <div class="no-print mt-3 d-flex gap-3 justify-content-center">
                 <button class="btn btn-print" @onclick="PrintTicket">
-                    Afdrukken
+                    @Lang.T("Print")
                 </button>
                 <button class="btn btn-close-ticket" @onclick="CloseTicket">
-                    Sluiten
+                    @Lang.T("Close")
                 </button>
             </div>
         </div>
@@ -275,13 +276,13 @@
 
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                errorMessage = "Code niet gevonden. Controleer de code en probeer opnieuw.";
+                errorMessage = Lang.T("CodeNotFound");
                 return;
             }
 
             if (!response.IsSuccessStatusCode)
             {
-                errorMessage = "Er ging iets mis. Probeer opnieuw.";
+                errorMessage = Lang.T("SomethingWentWrong");
                 return;
             }
 
@@ -290,7 +291,7 @@
         }
         catch (Exception)
         {
-            errorMessage = "Verbinding mislukt. Probeer opnieuw.";
+            errorMessage = Lang.T("ConnectionFailedRetry");
         }
         finally
         {

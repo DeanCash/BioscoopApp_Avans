@@ -167,29 +167,18 @@ namespace BackendAPI.Controllers
         {
             var now = DateTimeOffset.UtcNow;
 
-            var screenings = context.Screenings
+            var secretScreening = context.Screenings
                 .AsNoTracking()
                 .Where(s => s.StartTimeUtc > now)
                 .Include(s => s.Hall)
                     .ThenInclude(h => h.Seats)
-                .ToList();
-
-            if (!screenings.Any())
-                return NotFound("Geen toekomstige voorstellingen beschikbaar.");
-
-            var screeningIds = screenings.Select(s => s.ScreeningId).ToList();
-            var reservedCounts = context.Orders
-                .AsNoTracking()
-                .Where(o => screeningIds.Contains(o.ScreeningId) && o.SeatId != null)
-                .GroupBy(o => o.ScreeningId)
-                .Select(g => new { ScreeningId = g.Key, Count = g.Count() })
                 .ToList()
-                .ToDictionary(x => x.ScreeningId, x => x.Count);
-
-            var secretScreening = screenings
                 .OrderByDescending(s =>
-                    s.Hall.Seats.Count - reservedCounts.GetValueOrDefault(s.ScreeningId, 0))
-                .First();
+                    s.Hall.Seats.Count - context.Orders.Count(o => o.ScreeningId == s.ScreeningId && o.SeatId != null))
+                .FirstOrDefault();
+
+            if (secretScreening == null)
+                return NotFound("Geen toekomstige voorstellingen beschikbaar.");
 
             return Ok(new { screeningId = secretScreening.ScreeningId });
         }

@@ -1,8 +1,9 @@
 @page "/website/info"
 @inject IHttpClientFactory HttpClientFactory
 @using System.Net.Http.Json
+@inject LanguageService Lang
 
-<PageTitle>Bioscoop Info</PageTitle>
+<PageTitle>@Lang.T("CinemaInfo")</PageTitle>
 
 <style>
     .info-header {
@@ -205,8 +206,8 @@
 </style>
 
 <div class="info-header">
-    <h1>Pathe Tilburg</h1>
-    <p>Alles wat je moet weten over ons bioscoop</p>
+    <h1>@Lang.T("PatheTilburg")</h1>
+    <p>@Lang.T("InfoSubtitle")</p>
 </div>
 
 <div class="container-fluid px-2">
@@ -216,32 +217,30 @@
         <div class="col-12 col-md-6">
             <div class="card info-card h-100">
                 <div class="card-header">
-                    Algemene Informatie
+                    @Lang.T("GeneralInfo")
                 </div>
                 <div class="card-body">
                     <p>
-                        Welkom bij <strong>Pathe Tilburg</strong>, jouw ultieme bioscoopbeleving in het hart van Tilburg.
-                        Wij bieden de nieuwste films in prachtige zalen met state-of-the-art geluid en beeld.
+                        @Lang.T("InfoWelcome1")
                     </p>
                     <p>
-                        Of je nu komt voor een blockbuster, een familiefilm of een indie-titel &mdash; bij ons zit je altijd
-                        goed. Geniet van onze luxe stoelen, heerlijke snacks en een onvergetelijke filmervaring.
+                        @Lang.T("InfoWelcome2")
                     </p>
                     <hr />
                     <div class="contact-item">
-                        <span class="contact-icon">Adres:</span>
+                        <span class="contact-icon">@Lang.T("Address"):</span>
                         <span>Spoorlaan 458, 5038 CH Tilburg</span>
                     </div>
                     <div class="contact-item">
-                        <span class="contact-icon">Tel:</span>
+                        <span class="contact-icon">@Lang.T("Phone"):</span>
                         <span>0900 - 1458 (&euro;0,45/min)</span>
                     </div>
                     <div class="contact-item">
-                        <span class="contact-icon">Email:</span>
+                        <span class="contact-icon">@Lang.T("Email"):</span>
                         <span>tilburg&#64;pathe.nl</span>
                     </div>
                     <div class="contact-item">
-                        <span class="contact-icon">Web:</span>
+                        <span class="contact-icon">@Lang.T("Web"):</span>
                         <span><a href="https://www.pathe.nl/bioscoop/tilburg" target="_blank" rel="noopener">pathe.nl/bioscoop/tilburg</a></span>
                     </div>
                 </div>
@@ -252,44 +251,44 @@
         <div class="col-12 col-md-6">
             <div class="card info-card h-100">
                 <div class="card-header">
-                    Openingstijden
+                    @Lang.T("OpeningHours")
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-3">De kassa opent 30 minuten voor de eerste voorstelling.</p>
+                    <p class="text-muted mb-3">@Lang.T("BoxOfficeNote")</p>
                     <table class="table table-borderless opening-table mb-0">
                         <thead>
                             <tr>
-                                <th>Dag</th>
-                                <th>Tijden</th>
+                                <th>@Lang.T("Day")</th>
+                                <th>@Lang.T("Times")</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr class="@(GetTodayClass(DayOfWeek.Monday))">
-                                <td>Maandag</td>
+                                <td>@Lang.T("Monday")</td>
                                 <td>12:00 &ndash; 23:00</td>
                             </tr>
                             <tr class="@(GetTodayClass(DayOfWeek.Tuesday))">
-                                <td>Dinsdag</td>
+                                <td>@Lang.T("Tuesday")</td>
                                 <td>12:00 &ndash; 23:00</td>
                             </tr>
                             <tr class="@(GetTodayClass(DayOfWeek.Wednesday))">
-                                <td>Woensdag</td>
+                                <td>@Lang.T("Wednesday")</td>
                                 <td>10:00 &ndash; 23:00</td>
                             </tr>
                             <tr class="@(GetTodayClass(DayOfWeek.Thursday))">
-                                <td>Donderdag</td>
+                                <td>@Lang.T("Thursday")</td>
                                 <td>12:00 &ndash; 23:00</td>
                             </tr>
                             <tr class="@(GetTodayClass(DayOfWeek.Friday))">
-                                <td>Vrijdag</td>
+                                <td>@Lang.T("Friday")</td>
                                 <td>11:00 &ndash; 00:30</td>
                             </tr>
                             <tr class="@(GetTodayClass(DayOfWeek.Saturday))">
-                                <td>Zaterdag</td>
+                                <td>@Lang.T("Saturday")</td>
                                 <td>10:00 &ndash; 00:30</td>
                             </tr>
                             <tr class="@(GetTodayClass(DayOfWeek.Sunday))">
-                                <td>Zondag</td>
+                                <td>@Lang.T("Sunday")</td>
                                 <td>10:00 &ndash; 23:00</td>
                             </tr>
                         </tbody>
@@ -302,35 +301,35 @@
         <div class="col-12 col-md-5">
             <div class="card info-card h-100">
                 <div class="card-header">
-                    Routebeschrijving vanuit Breda Centraal
+                    @Lang.T("DirectionsTitle")
                 </div>
                 <div class="card-body">
                     <p class="text-muted mb-3">
-                        Vertrekpunt: <strong>Breda Centraal Station</strong> &rarr; Bestemming: <strong>Pathe Tilburg, Spoorlaan 458</strong>
+                        @Lang.T("DirectionsSubtitle")
                     </p>
                     <ul class="route-steps">
                         <li>
                             <span class="step-num">1</span>
-                            <span>Neem de <strong>trein</strong> vanaf Breda Centraal richting Tilburg (Intercity, ca. 15 min).</span>
+                            <span>@Lang.T("DirectionsStep1")</span>
                         </li>
                         <li>
                             <span class="step-num">2</span>
-                            <span>Kom aan op <strong>Tilburg Centraal Station</strong> en verlaat het station via de hoofduitgang (kant: Stationsplein).</span>
+                            <span>@Lang.T("DirectionsStep2")</span>
                         </li>
                         <li>
                             <span class="step-num">3</span>
-                            <span>Loop rechtdoor de <strong>Spoorlaan</strong> in, richting het stadscentrum (ca. 5 min lopen, 400 m).</span>
+                            <span>@Lang.T("DirectionsStep3")</span>
                         </li>
                         <li>
                             <span class="step-num">4</span>
-                            <span>Pathe Tilburg bevindt zich aan uw <strong>linkerhand</strong> op <strong>Spoorlaan 458</strong>. Het bioscoopgebouw is duidelijk zichtbaar.</span>
+                            <span>@Lang.T("DirectionsStep4")</span>
                         </li>
                     </ul>
                     <a class="btn-directions"
                        href="https://www.google.com/maps/dir/Breda+Centraal+Station,+Stationsplein,+Breda/Path%C3%A9+Tilburg,+Spoorlaan+458,+5038+CH+Tilburg"
                        target="_blank"
                        rel="noopener">
-                        Open route in Google Maps
+                        @Lang.T("OpenInGoogleMaps")
                     </a>
                 </div>
             </div>
@@ -340,7 +339,7 @@
         <div class="col-12 col-md-7">
             <div class="card info-card">
                 <div class="card-header">
-                    Kaart &ndash; Route Breda Centraal naar Pathe Tilburg
+                    @Lang.T("MapTitle")
                 </div>
                 <div class="map-wrapper">
                     <iframe
@@ -348,7 +347,7 @@
                         allowfullscreen
                         loading="lazy"
                         referrerpolicy="no-referrer-when-downgrade"
-                        title="Route van Breda Centraal naar Pathe Tilburg">
+                        title="@Lang.T("MapIframeTitle")">
                     </iframe>
                 </div>
             </div>
@@ -358,13 +357,13 @@
 </div>
 
 <div class="newsletter-footer">
-    <h2>Nieuwsbrief</h2>
-    <p>Ontvang als eerste het laatste nieuws over films en acties van Pathe Tilburg.</p>
+    <h2>@Lang.T("Newsletter")</h2>
+    <p>@Lang.T("NewsletterDescription")</p>
 
     @if (subscribeSuccess)
     {
         <div class="alert alert-success d-inline-block px-4 py-2 rounded-pill">
-            Bedankt! Je bent aangemeld voor de nieuwsbrief.
+            @Lang.T("NewsletterThanks")
         </div>
     }
     else
@@ -372,7 +371,7 @@
         <div class="newsletter-form">
             <input class="newsletter-input"
                    type="email"
-                   placeholder="Jouw e-mailadres"
+                   placeholder="@Lang.T("YourEmail")"
                    @bind="subscribeEmail"
                    @bind:event="oninput"
                    disabled="@isSubscribing" />
@@ -383,7 +382,7 @@
                 {
                     <span class="spinner-border spinner-border-sm me-1" role="status"></span>
                 }
-                Aanmelden
+                @Lang.T("Subscribe")
             </button>
         </div>
         @if (subscribeError != null)
@@ -419,16 +418,16 @@
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
-                subscribeError = "Dit e-mailadres is al aangemeld.";
+                subscribeError = Lang.T("EmailAlreadySubscribed");
             }
             else
             {
-                subscribeError = "Er is iets misgegaan. Probeer het later opnieuw.";
+                subscribeError = Lang.T("SomethingWentWrongLater");
             }
         }
         catch
         {
-            subscribeError = "Er is iets misgegaan. Probeer het later opnieuw.";
+            subscribeError = Lang.T("SomethingWentWrongLater");
         }
         finally
         {

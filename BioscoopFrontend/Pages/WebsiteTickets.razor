@@ -1,8 +1,9 @@
 @page "/website/tickets/{ScreeningId:guid}"
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject LanguageService Lang
 
-<PageTitle>Tickets Kopen</PageTitle>
+<PageTitle>@Lang.T("BuyTickets")</PageTitle>
 
 <style>
     .page-header {
@@ -160,12 +161,12 @@
 </style>
 
 <div class="page-header">
-    <h1>Tickets Kopen</h1>
+    <h1>@Lang.T("BuyTickets")</h1>
     @if (screening?.Movie != null)
     {
         <p>@screening.Movie.Title</p>
     }
-    <button class="btn btn-back mt-2" @onclick="GoBack">&larr; Terug</button>
+    <button class="btn btn-back mt-2" @onclick="GoBack">&larr; @Lang.T("Back")</button>
 </div>
 
 @if (errorMessage != null)
@@ -176,7 +177,7 @@ else if (tariffs == null)
 {
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-3 text-muted">Laden...</p>
+        <p class="mt-3 text-muted">@Lang.T("Loading")...</p>
     </div>
 }
 else
@@ -199,17 +200,17 @@ else
 
         <div class="summary-box">
             <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted">Aantal tickets</span>
+                <span class="text-muted">@Lang.T("NumberOfTickets")</span>
                 <span class="fw-bold">@TotalTickets</span>
             </div>
             <div class="d-flex justify-content-between">
-                <span class="fw-bold fs-5">Totaal</span>
+                <span class="fw-bold fs-5">@Lang.T("Total")</span>
                 <span class="fw-bold fs-5">@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</span>
             </div>
         </div>
 
         <button class="btn btn-pay" disabled="@(TotalTickets == 0)" @onclick="ShowPayment">
-            Online betalen &rarr;
+            @Lang.T("PayOnlineArrow")
         </button>
     </div>
 }
@@ -219,31 +220,31 @@ else
 {
     <div class="overlay" @onclick="CancelPayment">
         <div class="overlay-card" @onclick:stopPropagation>
-            <h3 class="fw-bold mb-1">Bevestig bestelling</h3>
-            <p class="text-muted mb-3">Controleer je gegevens voor je betaalt</p>
+            <h3 class="fw-bold mb-1">@Lang.T("ConfirmOrderTitle")</h3>
+            <p class="text-muted mb-3">@Lang.T("CheckDetailsBeforePayment")</p>
             <table class="ticket-table">
                 <tr>
-                    <th>Film</th>
+                    <th>@Lang.T("Film")</th>
                     <td><strong>@screening?.Movie?.Title</strong></td>
                 </tr>
                 <tr>
-                    <th>Datum</th>
+                    <th>@Lang.T("Date")</th>
                     <td>@screening?.StartTimeUtc.LocalDateTime.ToString("dddd d MMMM yyyy")</td>
                 </tr>
                 <tr>
-                    <th>Aanvang</th>
-                    <td>@screening?.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</td>
+                    <th>@Lang.T("StartTime")</th>
+                    <td>@screening?.StartTimeUtc.LocalDateTime.ToString("HH:mm") @Lang.T("Hour")</td>
                 </tr>
                 <tr>
-                    <th>Zaal</th>
-                    <td><span class="badge bg-primary">Zaal @screening?.Hall?.Number</span></td>
+                    <th>@Lang.T("Hall")</th>
+                    <td><span class="badge bg-primary">@Lang.T("Hall") @screening?.Hall?.Number</span></td>
                 </tr>
                 <tr>
-                    <th>Tickets</th>
+                    <th>@Lang.T("Tickets")</th>
                     <td>@TotalTickets</td>
                 </tr>
                 <tr>
-                    <th>Bedrag</th>
+                    <th>@Lang.T("Amount")</th>
                     <td><strong style="color: #28a745; font-size: 1.2rem;">@TotalPrice.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
                 </tr>
             </table>
@@ -254,10 +255,10 @@ else
             }
             <div class="d-flex gap-2 justify-content-center">
                 <button class="btn btn-success btn-lg px-4" @onclick="ConfirmPayment" disabled="@isProcessing">
-                    @if (isProcessing) { <span>Verwerken...</span> } else { <span>Betaal online</span> }
+                    @if (isProcessing) { <span>@Lang.T("Processing")...</span> } else { <span>@Lang.T("PayOnline")</span> }
                 </button>
                 <button class="btn btn-outline-secondary btn-lg" @onclick="CancelPayment" disabled="@isProcessing">
-                    Annuleren
+                    @Lang.T("Cancel")
                 </button>
             </div>
         </div>
@@ -269,45 +270,45 @@ else
 {
     <div class="overlay">
         <div class="overlay-card">
-            <h3 class="fw-bold mb-1" style="color: #1a1a2e;">Betaling geslaagd!</h3>
-            <p class="text-muted">Je bestelling is bevestigd</p>
+            <h3 class="fw-bold mb-1" style="color: #1a1a2e;">@Lang.T("PaymentSuccessful")</h3>
+            <p class="text-muted">@Lang.T("OrderConfirmed")</p>
 
             <div class="printcode-box">
-                <div class="printcode-label">Jouw ticketcode</div>
+                <div class="printcode-label">@Lang.T("YourTicketCode")</div>
                 <div class="printcode-value">@reservation.PrintCode</div>
             </div>
 
             <div class="printcode-instruction">
-                <strong>Hoe werkt het?</strong><br />
-                Kom naar de bioscoop en voer deze code in bij het <strong>zelfbedieningskiosk</strong> om je tickets af te drukken. Bewaar deze code goed!
+                <strong>@Lang.T("HowDoesItWork")</strong><br />
+                @Lang.T("TicketCodeInstructions")
             </div>
 
             <table class="ticket-table mt-3">
                 <tr>
-                    <th>Film</th>
+                    <th>@Lang.T("Film")</th>
                     <td><strong>@reservation.MovieTitle</strong></td>
                 </tr>
                 <tr>
-                    <th>Zaal</th>
-                    <td>Zaal @reservation.HallNumber</td>
+                    <th>@Lang.T("Hall")</th>
+                    <td>@Lang.T("Hall") @reservation.HallNumber</td>
                 </tr>
                 <tr>
-                    <th>Stoelen</th>
+                    <th>@Lang.T("Seats")</th>
                     <td>
                         @foreach (var seat in reservation.Seats)
                         {
-                            <span class="badge bg-secondary me-1">Rij @seat.RowLabel - @seat.SeatNumber</span>
+                            <span class="badge bg-secondary me-1">@Lang.T("Row") @seat.RowLabel - @seat.SeatNumber</span>
                         }
                     </td>
                 </tr>
                 <tr>
-                    <th>Betaald</th>
+                    <th>@Lang.T("Paid")</th>
                     <td><strong>@reservation.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
                 </tr>
             </table>
 
             <button class="btn btn-pay mt-3" @onclick="CloseAndGoHome">
-                Terug naar home
+                @Lang.T("BackToHome")
             </button>
         </div>
     </div>
@@ -344,7 +345,7 @@ else
         }
         catch (HttpRequestException)
         {
-            errorMessage = "Gegevens konden niet worden geladen.";
+            errorMessage = Lang.T("DataCouldNotBeLoaded");
         }
     }
 
@@ -384,9 +385,9 @@ else
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync();
-                paymentError = body.Contains("SOLD_OUT") ? "Uitverkocht! Geen plaatsen meer beschikbaar."
-                    : body.Contains("NO_ADJACENT") ? "Niet genoeg aaneengesloten plaatsen beschikbaar."
-                    : "Reservering mislukt. Probeer opnieuw.";
+                paymentError = body.Contains("SOLD_OUT") ? Lang.T("SoldOutNoPlaces")
+                    : body.Contains("NO_ADJACENT") ? Lang.T("NotEnoughAdjacentPlaces")
+                    : Lang.T("ReservationFailedRetry");
                 return;
             }
 
@@ -405,7 +406,7 @@ else
         }
         catch (Exception)
         {
-            paymentError = "Er ging iets mis. Probeer opnieuw.";
+            paymentError = Lang.T("SomethingWentWrong");
         }
         finally
         {

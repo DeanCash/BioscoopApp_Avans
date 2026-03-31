@@ -1,8 +1,9 @@
 @page "/website/SelectSeats/{ScreeningId:guid}"
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject LanguageService Lang
 
-<PageTitle>Stoelen Kiezen</PageTitle>
+<PageTitle>@Lang.T("ChooseSeats")</PageTitle>
 
 <style>
     .page-header {
@@ -158,9 +159,9 @@
 
 <div class="page-header">
     <button class="btn btn-back mb-3" @onclick="GoBack">
-        <span>&larr;</span> Terug
+        <span>&larr;</span> @Lang.T("Back")
     </button>
-    <h1>Kies je Stoelen</h1>
+    <h1>@Lang.T("ChooseYourSeats")</h1>
     @if (screening?.Movie != null)
     {
         <p>@(isSecretMode ? "&#127917; Secret Movie" : screening.Movie.Title)</p>
@@ -175,15 +176,15 @@ else if (seats == null)
 {
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Laden...</span>
+            <span class="visually-hidden">@Lang.T("Loading")...</span>
         </div>
-        <p class="mt-3 text-muted">Stoelen laden...</p>
+        <p class="mt-3 text-muted">@Lang.T("LoadingSeats")...</p>
     </div>
 }
 else
 {
     <div class="seats-wrapper">
-        <div class="screen-indicator">SCHERM</div>
+        <div class="screen-indicator">@Lang.T("Screen").ToUpper()</div>
 
         <div class="seat-map">
             @foreach (var row in seatsByRow)
@@ -203,14 +204,14 @@ else
         </div>
 
         <div class="legend d-flex gap-4 justify-content-center">
-            <div class="d-flex align-items-center gap-2"><span class="legend-box available"></span> <span class="text-muted">Beschikbaar</span></div>
-            <div class="d-flex align-items-center gap-2"><span class="legend-box selected"></span> <span class="text-muted">Geselecteerd</span></div>
-            <div class="d-flex align-items-center gap-2"><span class="legend-box reserved"></span> <span class="text-muted">Bezet</span></div>
+            <div class="d-flex align-items-center gap-2"><span class="legend-box available"></span> <span class="text-muted">@Lang.T("Available")</span></div>
+            <div class="d-flex align-items-center gap-2"><span class="legend-box selected"></span> <span class="text-muted">@Lang.T("Selected")</span></div>
+            <div class="d-flex align-items-center gap-2"><span class="legend-box reserved"></span> <span class="text-muted">@Lang.T("Occupied")</span></div>
         </div>
 
         <div class="summary-box">
             <div class="d-flex justify-content-between">
-                <span class="text-muted">Geselecteerde stoelen</span>
+                <span class="text-muted">@Lang.T("SelectedSeats")</span>
                 <span class="fw-bold">@selectedSeatIds.Count</span>
             </div>
         </div>
@@ -218,7 +219,7 @@ else
         <button class="btn btn-continue"
                 disabled="@(selectedSeatIds.Count == 0)"
                 @onclick="Continue">
-            Doorgaan &rarr;
+            @Lang.T("ContinueArrow")
         </button>
     </div>
 }
@@ -258,7 +259,7 @@ private bool isSecretMode;
         }
         catch (HttpRequestException)
         {
-            errorMessage = "Stoelen konden niet worden geladen.";
+            errorMessage = Lang.T("SeatsCouldNotBeLoaded");
         }
     }
 

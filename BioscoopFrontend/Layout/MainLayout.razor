@@ -1,8 +1,44 @@
 @inherits LayoutComponentBase
+@inject LanguageService LangService
+@inject NavigationManager Nav
+
 <div class="page">
     <main>
-        <article class="content px-4">
+        @if (!IsAdminRoute())
+        {
+            <div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
+                <LanguageSwitch />
+            </div>
+        }
+        <article @key="LangService.Lang" class="content px-4">
             @Body
         </article>
     </main>
 </div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LangService.InitAsync();
+            LangService.OnChange += OnLanguageChanged;
+            StateHasChanged();
+        }
+    }
+
+    private void OnLanguageChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsAdminRoute()
+    {
+        return Nav.Uri.Contains("/admin-panel", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public void Dispose()
+    {
+        LangService.OnChange -= OnLanguageChanged;
+    }
+}

@@ -2,8 +2,9 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject LanguageService Lang
 
-<PageTitle>Tickets Kiezen</PageTitle>
+<PageTitle>@Lang.T("ChooseTariffs")</PageTitle>
 
 <style>
     .page-header {
@@ -170,9 +171,9 @@
 
 <div class="page-header">
     <button class="btn btn-back mb-3" @onclick="GoBack">
-        <span>&larr;</span> Terug
+        <span>&larr;</span> @Lang.T("Back")
     </button>
-    <h1>Tarieven Kiezen</h1>
+    <h1>@Lang.T("ChooseTariffs")</h1>
     @if (screening?.Movie != null)
     {
         <p>@(isSecretMode ? "&#127917; Secret Movie" : screening.Movie.Title)</p>
@@ -187,9 +188,9 @@ else if (tariffs == null || seatInfos == null)
 {
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Laden...</span>
+            <span class="visually-hidden">@Lang.T("Loading")...</span>
         </div>
-        <p class="mt-3 text-muted">Gegevens laden...</p>
+        <p class="mt-3 text-muted">@Lang.T("LoadingData")...</p>
     </div>
 }
 else
@@ -200,7 +201,7 @@ else
             @foreach (var seat in seatInfos)
             {
                 <div class="tariff-card d-flex justify-content-between align-items-center">
-                    <div class="fw-bold" style="color: #1a1a2e;">Rij @seat.RowLabel - Stoel @seat.SeatNumber</div>
+                    <div class="fw-bold" style="color: #1a1a2e;">@Lang.T("Row") @seat.RowLabel - @Lang.T("Seat") @seat.SeatNumber</div>
                     <span style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 6px 16px; border-radius: 20px; font-weight: 700;">&#127917; &euro;2,50</span>
                 </div>
             }
@@ -210,7 +211,7 @@ else
         @foreach (var seat in seatInfos)
         {
             <div class="tariff-card d-flex justify-content-between align-items-center">
-                <div class="fw-bold" style="color: #1a1a2e;">Rij @seat.RowLabel - Stoel @seat.SeatNumber</div>
+                <div class="fw-bold" style="color: #1a1a2e;">@Lang.T("Row") @seat.RowLabel - @Lang.T("Seat") @seat.SeatNumber</div>
                 <select class="form-select tariff-select"
                         value="@GetSelectedTariff(seat.SeatId)"
                         @onchange="(e) => SetTariff(seat.SeatId, e)">
@@ -228,7 +229,7 @@ else
         @if (arrangements != null && arrangements.Any())
         {
             <div class="mt-4">
-                <h5 class="fw-bold mb-3" style="color: #e74c3c;">Extra's & Arrangementen</h5>
+                <h5 class="fw-bold mb-3" style="color: #e74c3c;">@Lang.T("ExtrasAndArrangements")</h5>
 
                 @foreach (var category in ArrangementsByCategory)
                 {
@@ -259,25 +260,25 @@ else
 
         <div class="summary-box">
             <div class="d-flex justify-content-between mb-1">
-                <span class="text-muted">Tickets (@seatInfos.Count)</span>
+                <span class="text-muted">@Lang.T("Tickets") (@seatInfos.Count)</span>
                 <span class="fw-bold">@TicketPrice.ToString("C2", nlCulture)</span>
             </div>
             @if (ArrangementPrice > 0)
             {
                 <div class="d-flex justify-content-between mb-1" style="color: #e74c3c;">
-                    <span>Extra's</span>
+                    <span>@Lang.T("Extras")</span>
                     <span>@ArrangementPrice.ToString("C2", nlCulture)</span>
                 </div>
             }
             <hr class="my-2" />
             <div class="d-flex justify-content-between">
-                <span class="fw-bold fs-5">Totaal</span>
+                <span class="fw-bold fs-5">@Lang.T("Total")</span>
                 <span class="fw-bold fs-5">@TotalPrice.ToString("C2", nlCulture)</span>
             </div>
         </div>
 
         <button class="btn btn-pay" @onclick="ShowPayment">
-            Doorgaan &rarr;
+            @Lang.T("ContinueArrow")
         </button>
     </div>
 }
@@ -295,37 +296,37 @@ else
             {
                 <div style="font-size: 4rem; margin-bottom: 15px;">&#127917;</div>
             }
-            <h2 style="color: #1a1a2e; font-weight: 700;">Bestelling bevestigen</h2>
+            <h2 style="color: #1a1a2e; font-weight: 700;">@Lang.T("ConfirmOrder")</h2>
             <hr style="border-color: #eee; margin: 20px 0;" />
             <table class="ticket-table">
                 <tr>
-                    <th>Film</th>
+                    <th>@Lang.T("Film")</th>
                     <td><strong>@(isSecretMode ? "&#127917; Secret Movie" : screening?.Movie?.Title)</strong></td>
                 </tr>
                 <tr>
-                    <th>Datum</th>
+                    <th>@Lang.T("Date")</th>
                     <td>@screening?.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</td>
                 </tr>
                 <tr>
-                    <th>Aanvang</th>
-                    <td>@screening?.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</td>
+                    <th>@Lang.T("StartTime")</th>
+                    <td>@screening?.StartTimeUtc.LocalDateTime.ToString("HH:mm") @Lang.T("Hour").ToLower()</td>
                 </tr>
                 <tr>
-                    <th>Zaal</th>
+                    <th>@Lang.T("Hall")</th>
                     <td>
                         <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">
-                            Zaal @screening?.Hall?.Number
+                            @Lang.T("Hall") @screening?.Hall?.Number
                         </span>
                     </td>
                 </tr>
                 <tr>
-                    <th>Tickets</th>
+                    <th>@Lang.T("Tickets")</th>
                     <td>@seatInfos?.Count</td>
                 </tr>
                 @if (ArrangementPrice > 0)
                 {
                     <tr>
-                        <th>Extra's</th>
+                        <th>@Lang.T("Extras")</th>
                         <td>
                             @foreach (var arr in arrangements!.Where(a => GetArrangementCount(a.ArrangementId) > 0))
                             {
@@ -335,14 +336,14 @@ else
                     </tr>
                 }
                 <tr>
-                    <th>Bedrag</th>
+                    <th>@Lang.T("Amount")</th>
                     <td><strong style="font-size: 1.3rem; color: #27ae60;">@TotalPrice.ToString("C2", nlCulture)</strong></td>
                 </tr>
             </table>
             <hr style="border-color: #eee; margin: 20px 0;" />
             <div style="background: #e8f5e9; border-radius: 10px; padding: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; justify-content: center;">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" style="height: 24px;" alt="Stripe" />
-                <small style="color: #2e7d32;">Veilig betalen via Stripe</small>
+                <small style="color: #2e7d32;">@Lang.T("SafePaymentStripe")</small>
             </div>
             @if (paymentError != null)
             {
@@ -352,15 +353,15 @@ else
                 <button class="btn btn-confirm" @onclick="GoToStripePayment" disabled="@isProcessing">
                     @if (isProcessing)
                     {
-                        <span>Doorsturen naar Stripe...</span>
+                        <span>@Lang.T("RedirectingToStripe")...</span>
                     }
                     else
                     {
-                        <span>Betaal via Stripe &rarr;</span>
+                        <span>@Lang.T("PayViaStripeArrow")</span>
                     }
                 </button>
                 <button class="btn btn-cancel" @onclick="CancelPayment" disabled="@isProcessing">
-                    Annuleren
+                    @Lang.T("Cancel")
                 </button>
             </div>
         </div>
@@ -402,10 +403,10 @@ private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
     private string GetCategoryDisplayName(string category) => category switch
     {
         "Popcorn" => "Popcorn",
-        "Drank" => "Drankjes",
-        "Snack" => "Snacks",
-        "ComboPackage" => "Combo Deals",
-        "HorecaSpecial" => "Specials",
+        "Drank" => Lang.T("Drinks"),
+        "Snack" => Lang.T("Snacks"),
+        "ComboPackage" => Lang.T("ComboDeals"),
+        "HorecaSpecial" => Lang.T("Specials"),
         _ => category
     };
 
@@ -429,7 +430,7 @@ private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
 
             if (string.IsNullOrEmpty(seatsParam))
             {
-                errorMessage = "Geen stoelen geselecteerd.";
+                errorMessage = Lang.T("NoSeatsSelected");
                 return;
             }
 
@@ -441,7 +442,7 @@ private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
 
             if (seatIds.Count == 0)
             {
-                errorMessage = "Geen geldige stoelen geselecteerd.";
+                errorMessage = Lang.T("NoValidSeatsSelected");
                 return;
             }
 
@@ -475,7 +476,7 @@ private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
         }
         catch (HttpRequestException)
         {
-            errorMessage = "Gegevens konden niet worden geladen.";
+            errorMessage = Lang.T("DataCouldNotBeLoaded");
         }
     }
 
@@ -536,8 +537,8 @@ private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
             {
                 var body = await reservationResponse.Content.ReadAsStringAsync();
                 paymentError = body.Contains("already taken")
-                    ? "Een of meer stoelen zijn inmiddels bezet. Ga terug en selecteer opnieuw."
-                    : "Reservering mislukt. Probeer opnieuw.";
+                    ? Lang.T("SeatsNowOccupied")
+                    : Lang.T("ReservationFailedRetry");
                 return;
             }
 
@@ -559,7 +560,7 @@ private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
 
             if (!checkoutResponse.IsSuccessStatusCode)
             {
-                paymentError = "Betaling kon niet worden gestart. Probeer opnieuw.";
+                paymentError = Lang.T("PaymentCouldNotBeStarted");
                 return;
             }
 
@@ -571,7 +572,7 @@ private Dictionary<string, List<ArrangementDto>> ArrangementsByCategory =>
         }
         catch (Exception)
         {
-            paymentError = "Er ging iets mis. Probeer opnieuw.";
+            paymentError = Lang.T("SomethingWentWrong");
         }
         finally
         {

@@ -1,4 +1,6 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject LanguageService Lang
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">BioscoopFrontend</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -21,7 +23,7 @@
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="kiosk/home">
-                <span class="bi bi-camera-reels-fill-nav-menu" aria-hidden="true"></span> Eerstkomende Films
+                <span class="bi bi-camera-reels-fill-nav-menu" aria-hidden="true"></span> @Lang.T("NavUpcomingMovies")
             </NavLink>
         </div>
         <div class="nav-item px-3">
@@ -31,7 +33,7 @@
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="website/info">
-                <span class="bi bi-info-circle-fill-nav-menu" aria-hidden="true"></span> Info &amp; Openingstijden
+                <span class="bi bi-info-circle-fill-nav-menu" aria-hidden="true"></span> @Lang.T("NavInfoHours")
             </NavLink>
         </div>
     </nav>

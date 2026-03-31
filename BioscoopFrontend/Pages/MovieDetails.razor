@@ -2,8 +2,9 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject LanguageService Lang
 
-<PageTitle>@(movie?.Title ?? "Film Details")</PageTitle>
+<PageTitle>@(movie?.Title ?? Lang.T("MovieDetails"))</PageTitle>
 
 <style>
     /* Hero section met backdrop */
@@ -409,7 +410,7 @@
 {
     <div class="loading-container">
         <div class="loading-spinner"></div>
-        <p class="loading-text">Film laden...</p>
+        <p class="loading-text">@Lang.T("Loading")...</p>
     </div>
 }
 else
@@ -427,7 +428,7 @@ else
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M19 12H5M12 19l-7-7 7-7"/>
                     </svg>
-                    Terug naar overzicht
+                    @Lang.T("BackToOverview")
                 </button>
 
                 <div class="row align-items-center">
@@ -457,7 +458,7 @@ else
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: -2px;">
                                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                                 </svg>
-                                @movie.Screenings.Count voorstellingen
+                                @movie.Screenings.Count @Lang.T("Showings").ToLower()
                             </span>
                         </div>
                         @if (!string.IsNullOrEmpty(movie.Description))
@@ -472,13 +473,13 @@ else
 
     <div class="screenings-section">
         <div class="container">
-            <h2 class="section-title">Voorstellingen & Zalen</h2>
+            <h2 class="section-title">@Lang.T("ShowingsAndHalls")</h2>
 
             @if (movie.Screenings.Count == 0)
             {
                 <div class="no-screenings">
-                    <h4>Geen voorstellingen gepland</h4>
-                    <p>Er zijn momenteel geen voorstellingen gepland voor deze film.</p>
+                    <h4>@Lang.T("NoShowingsPlanned")</h4>
+                    <p>@Lang.T("NoShowingsPlanned")</p>
                 </div>
             }
             else
@@ -501,14 +502,14 @@ else
                                         : percentage > 10 ? "seats-limited"
                                         : "seats-full";
                                 }
-                                <span class="@seatsClass">@screening.AvailableSeats</span> / @screening.TotalSeats stoelen
+                                <span class="@seatsClass">@screening.AvailableSeats</span> / @screening.TotalSeats @Lang.T("Seats").ToLower()
                             </div>
                         </div>
                         <div>
                             <button class="btn btn-book"
                                     @onclick="() => SelectScreening(screening)"
                                     disabled="@(screening.AvailableSeats == 0)">
-                                @(screening.AvailableSeats == 0 ? "Uitverkocht" : "Boek nu")
+                                @(screening.AvailableSeats == 0 ? Lang.T("SoldOutShort") : Lang.T("BookNow"))
                             </button>
                         </div>
                     </div>
@@ -528,34 +529,34 @@ else
                 <img src="@movie.ImageUrl" style="width: 140px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.2);" alt="@movie.Title" />
             }
             <div class="ticket-header">
-                <h2>PIN Betaling</h2>
+                <h2>@Lang.T("PinPayment")</h2>
             </div>
             <hr style="border-color: #eee; margin: 20px 0;" />
             <table class="ticket-table">
                 <tr>
-                    <th>Film</th>
+                    <th>@Lang.T("Film")</th>
                     <td><strong>@movie.Title</strong></td>
                 </tr>
                 <tr>
-                    <th>Datum</th>
+                    <th>@Lang.T("Date")</th>
                     <td>@selectedScreening.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</td>
                 </tr>
                 <tr>
-                    <th>Aanvang</th>
-                    <td>@selectedScreening.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</td>
+                    <th>@Lang.T("StartTime")</th>
+                    <td>@selectedScreening.StartTimeUtc.LocalDateTime.ToString("HH:mm") @Lang.T("Hour").ToLower()</td>
                 </tr>
                 <tr>
-                    <th>Zaal</th>
+                    <th>@Lang.T("Hall")</th>
                     <td><span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">@selectedScreening.HallName</span></td>
                 </tr>
                 <tr>
-                    <th>Bedrag</th>
+                    <th>@Lang.T("Amount")</th>
                     <td><strong style="font-size: 1.5rem; color: #27ae60;">€ 12,50</strong></td>
                 </tr>
             </table>
             <hr style="border-color: #eee; margin: 20px 0;" />
             <div style="background: #e3f2fd; border-radius: 10px; padding: 12px; margin-bottom: 20px;">
-                <small style="color: #1976d2;">Alleen PIN-betaling - geen contant geld</small>
+                <small style="color: #1976d2;">@Lang.T("PinPaymentOnly")</small>
             </div>
             @if (paymentError != null)
             {
@@ -565,15 +566,15 @@ else
                 <button class="btn btn-success btn-lg" style="padding: 14px 40px; border-radius: 30px; font-weight: 600;" @onclick="ConfirmPinPayment" disabled="@isProcessing">
                     @if (isProcessing)
                     {
-                        <span>Verwerken...</span>
+                        <span>@Lang.T("ProcessingPayment")...</span>
                     }
                     else
                     {
-                        <span>Betaal met PIN</span>
+                        <span>@Lang.T("PayWithPin")</span>
                     }
                 </button>
                 <button class="btn btn-outline-secondary btn-lg" style="padding: 14px 30px; border-radius: 30px;" @onclick="CancelPayment" disabled="@isProcessing">
-                    Annuleren
+                    @Lang.T("Cancel")
                 </button>
             </div>
         </div>
@@ -591,8 +592,8 @@ else
                     <img src="@movie.ImageUrl" style="width: 100px; border-radius: 10px; flex-shrink: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" alt="@movie.Title" />
                 }
                 <div style="text-align: left; flex: 1;">
-                    <h3 style="margin: 0 0 5px 0; color: #1a1a2e; font-weight: 800;">CINEMA TICKET</h3>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;">Bewaar dit ticket goed</p>
+                    <h3 style="margin: 0 0 5px 0; color: #1a1a2e; font-weight: 800;">@Lang.T("CinemaTicket")</h3>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;">@Lang.T("KeepTicketSafe")</p>
                 </div>
             </div>
 
@@ -602,15 +603,15 @@ else
 
             <table class="ticket-table">
                 <tr>
-                    <th>Datum</th>
+                    <th>@Lang.T("Date")</th>
                     <td><strong>@selectedScreening.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</strong></td>
                 </tr>
                 <tr>
-                    <th>Aanvang</th>
-                    <td><strong style="font-size: 1.4rem; color: #e74c3c;">@selectedScreening.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</strong></td>
+                    <th>@Lang.T("StartTime")</th>
+                    <td><strong style="font-size: 1.4rem; color: #e74c3c;">@selectedScreening.StartTimeUtc.LocalDateTime.ToString("HH:mm") @Lang.T("Hour").ToLower()</strong></td>
                 </tr>
                 <tr>
-                    <th>Zaal</th>
+                    <th>@Lang.T("Hall")</th>
                     <td>
                         <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 22px; border-radius: 25px; font-weight: bold; font-size: 1.1rem; display: inline-block;">
                             @selectedScreening.HallName.ToUpper()
@@ -618,30 +619,30 @@ else
                     </td>
                 </tr>
                 <tr>
-                    <th>Status</th>
-                    <td><span style="color: #27ae60; font-weight: bold; font-size: 1.1rem;">BETAALD (PIN)</span></td>
+                    <th>@Lang.T("Status")</th>
+                    <td><span style="color: #27ae60; font-weight: bold; font-size: 1.1rem;">@Lang.T("PaidPin")</span></td>
                 </tr>
             </table>
 
             <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
-                <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Ticketcode</p>
+                <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">@Lang.T("TicketCode")</p>
                 <p style="margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: 6px; font-family: monospace; color: #1a1a2e;">@printCode</p>
             </div>
 
             <div style="border-top: 3px dashed #ccc; border-bottom: 3px dashed #ccc; padding: 18px 0; margin: 20px 0;">
                 <p class="ticket-barcode" style="margin: 0; font-size: 2.5rem;">||||| |||| | || ||| || |||| |||||</p>
-                <p style="margin: 8px 0 0 0; font-size: 0.8rem; color: #999;">Toon dit ticket bij de ingang</p>
+                <p style="margin: 8px 0 0 0; font-size: 0.8rem; color: #999;">@Lang.T("ShowTicketAtEntrance")</p>
             </div>
 
             <div class="d-flex gap-3 justify-content-center mt-4">
                 <button class="btn btn-success btn-lg" style="padding: 14px 40px; border-radius: 30px; font-weight: 600;" @onclick="PrintTicket">
-                    Afdrukken
+                    @Lang.T("Print")
                 </button>
                 <button class="btn btn-outline-primary btn-lg" style="padding: 14px 30px; border-radius: 30px;" @onclick="OpenPrintPage">
-                    Naar printpagina
+                    @Lang.T("PrintPage")
                 </button>
                 <button class="btn btn-outline-secondary btn-lg" style="padding: 14px 30px; border-radius: 30px;" @onclick="CloseTicket">
-                    Sluiten
+                    @Lang.T("Close")
                 </button>
             </div>
         </div>
@@ -696,7 +697,7 @@ else
 
             if (!createResponse.IsSuccessStatusCode)
             {
-                paymentError = "Betaling mislukt. Probeer opnieuw.";
+                paymentError = Lang.T("PaymentFailedRetry");
                 return;
             }
 

@@ -2,8 +2,9 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject LanguageService Lang
 
-<PageTitle>Ticket Afdrukken</PageTitle>
+<PageTitle>@Lang.T("PrintTicket")</PageTitle>
 
 <style>
     body {
@@ -83,19 +84,19 @@
 {
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Laden...</span>
+            <span class="visually-hidden">@Lang.T("Loading")...</span>
         </div>
-        <p class="mt-3 text-muted">Betaling verwerken...</p>
+        <p class="mt-3 text-muted">@Lang.T("ProcessingPayment")...</p>
     </div>
 }
 else if (errorMessage != null)
 {
     <div class="container" style="max-width: 480px; margin-top: 60px;">
         <div class="alert alert-danger text-center">
-            <strong>Er ging iets mis</strong><br />
+            <strong>@Lang.T("SomethingWentWrongShort")</strong><br />
             @errorMessage
         </div>
-        <button class="btn btn-home w-100 mt-3" @onclick="GoHome">Terug naar begin</button>
+        <button class="btn btn-home w-100 mt-3" @onclick="GoHome">@Lang.T("BackToStart")</button>
     </div>
 }
 else if (reservation != null)
@@ -104,8 +105,8 @@ else if (reservation != null)
         <div class="ticket-page">
             <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px;">
                 <div style="text-align: left; flex: 1;">
-                    <h3 style="margin: 0 0 4px 0; color: #1a1a2e; font-weight: 800;">CINEMA TICKET</h3>
-                    <p style="margin: 0; color: #666; font-size: 0.85rem;">Geldig op datum en tijdstip</p>
+                    <h3 style="margin: 0 0 4px 0; color: #1a1a2e; font-weight: 800;">@Lang.T("CinemaTicket").ToUpper()</h3>
+                    <p style="margin: 0; color: #666; font-size: 0.85rem;">@Lang.T("ValidOnDateTime")</p>
                 </div>
             </div>
 
@@ -115,48 +116,48 @@ else if (reservation != null)
 
             <table class="ticket-table">
                 <tr>
-                    <th>Datum</th>
+                    <th>@Lang.T("Date")</th>
                     <td><strong>@reservation.StartTimeUtc.LocalDateTime.ToString("dddd dd MMMM yyyy")</strong></td>
                 </tr>
                 <tr>
-                    <th>Aanvang</th>
-                    <td><strong style="font-size: 1.2rem; color: #e74c3c;">@reservation.StartTimeUtc.LocalDateTime.ToString("HH:mm") uur</strong></td>
+                    <th>@Lang.T("StartTime")</th>
+                    <td><strong style="font-size: 1.2rem; color: #e74c3c;">@reservation.StartTimeUtc.LocalDateTime.ToString("HH:mm") @Lang.T("Hour").ToLower()</strong></td>
                 </tr>
                 <tr>
-                    <th>Zaal</th>
+                    <th>@Lang.T("Hall")</th>
                     <td>
                         <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 16px; border-radius: 20px; font-weight: bold;">
-                            ZAAL @reservation.HallNumber
+                            @($"{Lang.T("Hall").ToUpper()} {reservation.HallNumber}")
                         </span>
                     </td>
                 </tr>
                 <tr>
-                    <th>Stoelen</th>
+                    <th>@Lang.T("Seats")</th>
                     <td>
                         @foreach (var seat in reservation.Seats)
                         {
                             <span class="badge" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); margin-right: 4px; margin-bottom: 4px;">
-                                Rij @seat.RowLabel - Stoel @seat.SeatNumber
+                                @Lang.T("Row") @seat.RowLabel - @Lang.T("Seat") @seat.SeatNumber
                             </span>
                         }
                     </td>
                 </tr>
                 <tr>
-                    <th>Bedrag</th>
+                    <th>@Lang.T("Amount")</th>
                     <td><strong>@reservation.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("nl-NL"))</strong></td>
                 </tr>
                 <tr>
-                    <th>Status</th>
-                    <td><span style="color: #27ae60; font-weight: bold;">BETAALD</span></td>
+                    <th>@Lang.T("Status")</th>
+                    <td><span style="color: #27ae60; font-weight: bold;">@Lang.T("Paid").ToUpper()</span></td>
                 </tr>
             </table>
 
             <div class="no-print mt-4 d-flex gap-3 justify-content-center">
                 <button class="btn btn-print" @onclick="PrintTicket">
-                    Afdrukken
+                    @Lang.T("Print")
                 </button>
                 <button class="btn btn-home" @onclick="GoHome">
-                    Nieuw ticket
+                    @Lang.T("NewTicket")
                 </button>
             </div>
         </div>
@@ -186,7 +187,7 @@ else if (reservation != null)
 
                 if (!confirmResponse.IsSuccessStatusCode)
                 {
-                    errorMessage = "Betaling kon niet worden bevestigd. Neem contact op met de kassa.";
+                    errorMessage = Lang.T("PaymentCouldNotBeConfirmed");
                     isLoading = false;
                     return;
                 }
@@ -196,11 +197,11 @@ else if (reservation != null)
                 $"api/reservations/by-code/{PrintCode}");
 
             if (reservation == null)
-                errorMessage = "Ticket niet gevonden.";
+                errorMessage = Lang.T("TicketNotFound");
         }
         catch (HttpRequestException)
         {
-            errorMessage = "Verbinding met de server mislukt.";
+            errorMessage = Lang.T("ConnectionFailed");
         }
         finally
         {

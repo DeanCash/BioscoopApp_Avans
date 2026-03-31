@@ -1,0 +1,8 @@
+@inject LanguageService LangService
+
+<div class="language-switch d-inline-flex gap-1">
+    <button class="btn btn-sm @(LangService.Lang == "nl" ? "btn-light" : "btn-outline-light")"
+            @onclick='() => LangService.SetAsync("nl")'>NL</button>
+    <button class="btn btn-sm @(LangService.Lang == "en" ? "btn-light" : "btn-outline-light")"
+            @onclick='() => LangService.SetAsync("en")'>EN</button>
+</div>

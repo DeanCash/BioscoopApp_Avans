@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject LanguageService Lang
 
 @code {
     [SupplyParameterFromQuery]
@@ -39,27 +40,27 @@
                 <small style="color:#666;">@((date ?? "") + (string.IsNullOrEmpty(time) ? "" : " • " + time))</small>
             </div>
             <div class="no-print">
-                <button class="btn btn-outline-secondary" style="margin-right:8px;" @onclick="ClosePage">Sluiten</button>
-                <button class="btn btn-primary" @onclick="PrintPage">Print</button>
+                <button class="btn btn-outline-secondary" style="margin-right:8px;" @onclick="ClosePage">@Lang.T("Close")</button>
+                <button class="btn btn-primary" @onclick="PrintPage">@Lang.T("Print")</button>
             </div>
         </div>
 
         <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; padding: 14px; margin-bottom: 16px; text-align:left;">
             <table class="ticket-table" style="margin:0;">
                 <tr>
-                    <th>Film</th>
+                    <th>@Lang.T("Film")</th>
                     <td><strong>@(movie ?? "-")</strong></td>
                 </tr>
                 <tr>
-                    <th>Datum</th>
+                    <th>@Lang.T("Date")</th>
                     <td>@(date ?? "-")</td>
                 </tr>
                 <tr>
-                    <th>Tijd</th>
+                    <th>@Lang.T("Time")</th>
                     <td>@(time ?? "-")</td>
                 </tr>
                 <tr>
-                    <th>Stoelen</th>
+                    <th>@Lang.T("Seats")</th>
                     <td>@(seats ?? "-")</td>
                 </tr>
             </table>
@@ -67,7 +68,7 @@
 
         <div style="text-align:center; margin: 14px 0 8px 0;">
             <div class="ticket-barcode" style="font-family: monospace; font-size: 2.2rem; letter-spacing: 6px;">@(code ?? "-")</div>
-            <p style="margin:8px 0 0 0; color:#777;">Toon dit ticket bij binnenkomst in de zaal</p>
+            <p style="margin:8px 0 0 0; color:#777;">@Lang.T("ShowTicketAtHallEntrance")</p>
         </div>
     </div>
 </div>

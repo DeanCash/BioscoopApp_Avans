@@ -1,10 +1,11 @@
 @page "/kiosk/home"
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager Navigation
+@inject LanguageService Lang
 @using BioscoopFrontend.Models
 @using System.Text.Json.Serialization
 
-<PageTitle>Eerstkomende Films</PageTitle>
+<PageTitle>@Lang.T("UpcomingMovies")</PageTitle>
 
 <style>
     .movie-card {
@@ -206,12 +207,12 @@
     <div class="page-header-inner">
         <div class="d-flex justify-content-end px-4 pt-2">
             <button class="btn btn-outline-light" @onclick='() => Navigation.NavigateTo("/print-code")'>
-                Tickets ophalen
+                @Lang.T("PickUpTickets")
             </button>
         </div>
         <div class="page-header-text">
-            <h1>Eerstkomende Films</h1>
-            <p>Bekijk films met voorstellingen in de komende 7 dagen</p>
+            <h1>@Lang.T("UpcomingMovies")</h1>
+            <p>@Lang.T("UpcomingMoviesSubtitle")</p>
         </div>
         <div class="page-header-action">
             <button class="btn btn-secret" @onclick="OpenSecretModal">🎭 Secret Movie</button>
@@ -226,13 +227,13 @@
                 <span class="input-group-text bg-white border-end-0">
                     <span>🔍</span>
                 </span>
-                <input type="text" class="form-control border-start-0" placeholder="Zoek op titel..."
+                <input type="text" class="form-control border-start-0" placeholder="@Lang.T("SearchByTitle")"
                        @bind="searchQuery" @bind:event="oninput" />
             </div>
         </div>
         <div class="col-md-3">
             <select class="form-select" @bind="selectedGenre">
-                <option value="">Alle genres</option>
+                <option value="">@Lang.T("AllGenres")</option>
                 @foreach (var genre in AvailableGenres)
                 {
                     <option value="@genre">@genre</option>
@@ -241,7 +242,7 @@
         </div>
         <div class="col-md-3">
             <select class="form-select" @bind="selectedAge">
-                <option value="0">Alle leeftijden</option>
+                <option value="0">@Lang.T("AllAges")</option>
                 <option value="6">6+</option>
                 <option value="9">9+</option>
                 <option value="12">12+</option>
@@ -251,7 +252,7 @@
         </div>
         <div class="col-md-2">
             <button class="btn btn-outline-secondary w-100" @onclick="ClearFilters">
-                Wis filters
+                @Lang.T("ClearFilters")
             </button>
         </div>
     </div>
@@ -259,7 +260,7 @@
     @if (FilteredMovies != null)
     {
         <div class="mt-3 text-muted">
-            <small>@FilteredMovies.Count van @movies?.Count films gevonden</small>
+            <small>@FilteredMovies.Count @Lang.T("Of") @movies?.Count @Lang.T("MoviesFound")</small>
         </div>
     }
 </div>
@@ -270,18 +271,17 @@
     <div class="modal-box" @onclick:stopPropagation="true">
             <h3>Secret Movie</h3>
             <p>
-                Benieuwd naar een verrassingfilm? Bij de <strong>Secret Movie</strong> weet je van tevoren niet welke film er gedraaid wordt.
-                Laat je verrassen en beleef een unieke bioscoopervaring! De film wordt pas onthuld wanneer je in de zaal zit.
+                @Lang.T("SecretMovieDescription")
             </p>
-            <div class="modal-price">Prijs: €2,50 per ticket</div>
+            <div class="modal-price">@Lang.T("PricePerTicket"): €2,50</div>
             @if (secretError != null)
             {
                 <div class="alert alert-danger py-2">@secretError</div>
             }
             <div class="modal-actions">
-                <button class="btn btn-cancel" @onclick="CloseSecretModal" disabled="@secretLoading">Annuleren</button>
+                <button class="btn btn-cancel" @onclick="CloseSecretModal" disabled="@secretLoading">@Lang.T("Cancel")</button>
                 <button class="btn btn-select" @onclick="SelectSecretMovie" disabled="@secretLoading">
-                    @if (secretLoading) { <span>Laden...</span> } else { <span>Selecteren</span> }
+                    @if (secretLoading) { <span>@Lang.T("Loading")</span> } else { <span>@Lang.T("Select")</span> }
                 </button>
             </div>
         </div>
@@ -292,9 +292,9 @@
 {
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Laden...</span>
+            <span class="visually-hidden">@Lang.T("Loading")</span>
         </div>
-        <p class="mt-3 text-muted">Films laden...</p>
+        <p class="mt-3 text-muted">@Lang.T("LoadingMovies")</p>
     </div>
 }
 else if (loadError != null)
@@ -304,16 +304,16 @@ else if (loadError != null)
 else if (movies.Count == 0)
 {
     <div class="alert alert-info text-center">
-        <h4>Geen films beschikbaar</h4>
-        <p>Er zijn momenteel geen films gepland voor de komende dagen.</p>
+        <h4>@Lang.T("NoMoviesAvailable")</h4>
+        <p>@Lang.T("NoMoviesPlanned")</p>
     </div>
 }
 else if (FilteredMovies.Count == 0)
 {
     <div class="alert alert-info text-center">
-        <h4>Geen films gevonden</h4>
-        <p>Probeer andere zoektermen of filters.</p>
-        <button class="btn btn-primary" @onclick="ClearFilters">Wis alle filters</button>
+        <h4>@Lang.T("NoMoviesFound")</h4>
+        <p>@Lang.T("TryDifferentFilters")</p>
+        <button class="btn btn-primary" @onclick="ClearFilters">@Lang.T("ClearAllFilters")</button>
     </div>
 }
 else
@@ -346,7 +346,7 @@ else
                             @movie.FirstScreeningAtUtc.LocalDateTime.ToString("ddd d MMM HH:mm")
                         </small>
                         <button class="btn btn-details">
-                            Bekijk details
+                            @Lang.T("ViewDetails")
                         </button>
                     </div>
                 </div>
@@ -421,7 +421,7 @@ else
         }
         catch (Exception ex)
         {
-            loadError = $"Kon films niet ophalen: {ex.Message}";
+            loadError = $"{Lang.T("CouldNotLoadMovies")}: {ex.Message}";
             movies = [];
         }
     }
@@ -459,7 +459,7 @@ else
             var response = await http.GetFromJsonAsync<SecretScreeningResponse>("api/movies/secret-screening");
             if (response?.ScreeningId == null)
             {
-                secretError = "Geen voorstelling beschikbaar. Probeer later opnieuw.";
+                secretError = Lang.T("NoShowingAvailable");
                 return;
             }
 
@@ -468,7 +468,7 @@ else
         }
         catch
         {
-            secretError = "Kon de voorstelling niet ophalen. Probeer opnieuw.";
+            secretError = Lang.T("CouldNotLoadShowing");
         }
         finally
         {
