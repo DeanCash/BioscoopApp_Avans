@@ -1,0 +1,82 @@
+@inject NavigationManager Nav
+@inject LanguageService Lang
+@inject NavigationManager Nav
+@using BioscoopFrontend.Services
+
+<nav class="website-navbar">
+    <div class="website-navbar-inner">
+        <a class="website-navbar-brand" href="/website/home">Pathe Tilburg</a>
+        <div class="website-navbar-links">
+            <a class="website-nav-link @(IsActive("/website/home") ? "active" : "")" href="/website/home">@Lang.T("MoviesThisWeek")</a>
+            <a class="website-nav-link @(IsActive("/website/info") ? "active" : "")" href="/website/info">@Lang.T("CinemaInfo")</a>
+            <a class="website-nav-link website-nav-admin" href="/admin-panel/login">Admin</a>
+        </div>
+        <LanguageSwitch />
+    </div>
+</nav>
+
+<style>
+    .website-navbar {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        padding: 0 24px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .website-navbar-inner {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+        height: 56px;
+    }
+    .website-navbar-brand {
+        color: white;
+        font-weight: 800;
+        font-size: 1.1rem;
+        text-decoration: none;
+        white-space: nowrap;
+        margin-right: 8px;
+    }
+    .website-navbar-brand:hover {
+        color: #a78bfa;
+    }
+    .website-navbar-links {
+        display: flex;
+        gap: 4px;
+        flex: 1;
+    }
+    .website-nav-link {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: background 0.15s, color 0.15s;
+    }
+    .website-nav-link:hover {
+        background: rgba(255,255,255,0.1);
+        color: white;
+    }
+    .website-nav-link.active {
+        background: rgba(255,255,255,0.15);
+        color: white;
+        font-weight: 600;
+    }
+    .website-nav-admin {
+        margin-left: auto;
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    .website-nav-admin:hover {
+        border-color: white;
+    }
+</style>
+
+@code {
+    private bool IsActive(string path)
+    {
+        return Nav.Uri.Contains(path, StringComparison.OrdinalIgnoreCase);
+    }
+}

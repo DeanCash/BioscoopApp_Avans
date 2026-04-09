@@ -1,6 +1,6 @@
 ﻿window.authInterop = {
     login: async function (username, password) {
-        const response = await fetch('http://localhost:5033/api/auth/login', {
+        const response = await fetch('https://localhost:7120/api/auth/login', {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -27,7 +27,7 @@
     },
 
     logout: async function () {
-        const response = await fetch('http://localhost:5033/api/auth/logout', {
+        const response = await fetch('https://localhost:7120/api/auth/logout', {
             method: 'POST',
             credentials: 'include'
         });

@@ -1,16 +1,21 @@
+@using BioscoopFrontend.Services
 @inherits LayoutComponentBase
 @inject LanguageService LangService
 @inject NavigationManager Nav
 
 <div class="page">
     <main>
-        @if (!IsAdminRoute())
+        @if (IsWebsiteRoute())
+        {
+            <WebsiteNavBar />
+        }
+        @if (!IsAdminRoute() && !IsWebsiteRoute())
         {
             <div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
                 <LanguageSwitch />
             </div>
         }
-        <article @key="LangService.Lang" class="content px-4">
+        <article @key="LangService.Lang" class="@(IsWebsiteRoute() ? "" : "content px-4")">
             @Body
         </article>
     </main>
@@ -35,6 +40,11 @@
     private bool IsAdminRoute()
     {
         return Nav.Uri.Contains("/admin-panel", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsWebsiteRoute()
+    {
+        return Nav.Uri.Contains("/website/", StringComparison.OrdinalIgnoreCase);
     }
 
     public void Dispose()
